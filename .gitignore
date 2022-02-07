@@ -2,8 +2,8 @@
 # This .gitignore file was automatically created by Microsoft(R) Visual Studio.
 ################################################################################
 
-/DeadlockedDatabase/DeadlockedDatabase/bin/Debug/netcoreapp3.1/Properties/launchSettings.json
-/DeadlockedDatabase/DeadlockedDatabase/Properties/launchSettings.json
+/Horizon.Database/bin/Debug/netcoreapp3.1/Properties/launchSettings.json
+/Horizon.Database/Properties/launchSettings.json
 
 
 ## Ignore Visual Studio temporary files, build results, and
@@ -251,4 +251,4 @@ paket-files/
 # JetBrains Rider
 .idea/
 *.sln.iml
-/DeadlockedDatabase/DeadlockedDatabase/db.json
+/Horizon.Database/db.json
