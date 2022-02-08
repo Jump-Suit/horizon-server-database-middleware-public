@@ -45,7 +45,7 @@ namespace Horizon.Database
             services.AddDbContext<Ratchet_DeadlockedContext>((serviceProvider, dbContextBuilder) =>
             {
                 var connectionStringPlaceHolder = Configuration.GetConnectionString("DbConnection");
-                string serverName = "127.0.0.1,10094";// Environment.GetEnvironmentVariable("DB_SERVER");
+                string serverName = Environment.GetEnvironmentVariable("DB_SERVER");
                 string dbName = Environment.GetEnvironmentVariable("DB_NAME");
                 string dbUserName = Environment.GetEnvironmentVariable("DB_USER");
                 string dbPassword = Environment.GetEnvironmentVariable("DB_PASSWORD");
