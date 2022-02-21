@@ -46,6 +46,71 @@ namespace Horizon.Database.Controllers
             }
         }
 
+        //[Authorize("stats_bot")]
+        [HttpGet, Route("history/{appId}")]
+        public async Task<dynamic> getGameHistory(int appId, int pageIndex, int pageSize)
+        {
+            var games = db.GameHistory.Where(g => g.AppId == appId);
+            var pageCount = games.Count() / pageSize;
+
+            if (games != null)
+            {
+                return new
+                {
+                    Games = games.Skip(pageIndex * pageSize).Take(pageSize).ToList(),
+                    PageCount = pageCount
+                };
+            }
+            else
+            {
+                return NotFound();
+            }
+        }
+
+
+
+        //[Authorize("stats_bot")]
+        [HttpPut, Route("history")]
+        public async Task<dynamic> updateGameHistory([FromBody] GameHistory game)
+        {
+            var existingGame = db.GameHistory.Where(g => g.Id == game.Id).Select(g => g).FirstOrDefault();
+            if (existingGame != null)
+            {
+                existingGame.GameId = game.GameId;
+                existingGame.AppId = game.AppId;
+                existingGame.MinPlayers = game.MinPlayers;
+                existingGame.MaxPlayers = game.MaxPlayers;
+                existingGame.PlayerCount = game.PlayerCount;
+                existingGame.PlayerListCurrent = game.PlayerListCurrent;
+                existingGame.PlayerListStart = game.PlayerListStart;
+                existingGame.PlayerSkillLevel = game.PlayerSkillLevel;
+                existingGame.GameLevel = game.GameLevel;
+                existingGame.GameName = game.GameName;
+                existingGame.RuleSet = game.RuleSet;
+                existingGame.GenericField1 = game.GenericField1;
+                existingGame.GenericField2 = game.GenericField2;
+                existingGame.GenericField3 = game.GenericField3;
+                existingGame.GenericField4 = game.GenericField4;
+                existingGame.GenericField5 = game.GenericField5;
+                existingGame.GenericField6 = game.GenericField6;
+                existingGame.GenericField7 = game.GenericField7;
+                existingGame.GenericField8 = game.GenericField8;
+                existingGame.WorldStatus = game.WorldStatus;
+                existingGame.GameHostType = game.GameHostType;
+                existingGame.GameCreateDt = game.GameCreateDt;
+                existingGame.GameStartDt = game.GameStartDt;
+                existingGame.Metadata = game.Metadata;
+
+                db.SaveChanges();
+
+                return Ok();
+            }
+            else
+            {
+                return NotFound();
+            }
+        }
+
         [Authorize("database")]
         [HttpPost, Route("create")]
         public async Task<dynamic> createGame([FromBody] GameDTO game)
