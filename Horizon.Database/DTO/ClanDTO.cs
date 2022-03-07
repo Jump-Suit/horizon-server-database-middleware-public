@@ -22,6 +22,11 @@ namespace Horizon.Database.DTO
         /// Collection of ladder stats.
         /// </summary>
         public List<int> ClanWideStats { get; set; }
+
+        /// <summary>
+        /// Collection of custom ladder stats.
+        /// </summary>
+        public List<int> ClanCustomWideStats { get; set; }
     }
 
     public class CreateClanDTO

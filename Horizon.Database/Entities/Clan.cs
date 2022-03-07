@@ -11,6 +11,7 @@ namespace Horizon.Database.Entities
             ClanMember = new HashSet<ClanMember>();
             ClanMessage = new HashSet<ClanMessage>();
             ClanStat = new HashSet<ClanStat>();
+            ClanCustomStat = new HashSet<ClanCustomStat>();
         }
 
         public int ClanId { get; set; }
@@ -29,5 +30,6 @@ namespace Horizon.Database.Entities
         public virtual ICollection<ClanMember> ClanMember { get; set; }
         public virtual ICollection<ClanMessage> ClanMessage { get; set; }
         public virtual ICollection<ClanStat> ClanStat { get; set; }
+        public virtual ICollection<ClanCustomStat> ClanCustomStat { get; set; }
     }
 }

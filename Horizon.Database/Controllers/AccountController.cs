@@ -88,6 +88,7 @@ namespace Horizon.Database.Controllers
                                        AccountName = a.AccountName,
                                        AccountPassword = a.AccountPassword,
                                        AccountWideStats = a.AccountStat.OrderBy(s => s.StatId).Select(s => s.StatValue).ToList(),
+                                       AccountCustomWideStats = a.AccountCustomStat.OrderBy(s => s.StatId).Select(s => s.StatValue).ToList(),
                                        Friends = new List<AccountRelationDTO>(),
                                        Ignored = new List<AccountRelationDTO>(),
                                        Metadata = existingAccount.Metadata,
@@ -166,6 +167,15 @@ namespace Horizon.Database.Controllers
                                                       StatValue = ds.DefaultValue
                                                   }).ToList();
                     db.AccountStat.AddRange(newStats);
+
+                    List<AccountCustomStat> newCustomStats = (from ds in db.DimCustomStats
+                                                              select new AccountCustomStat()
+                                                              {
+                                                                  AccountId = acc.AccountId,
+                                                                  StatId = ds.StatId,
+                                                                  StatValue = ds.DefaultValue
+                                                              }).ToList();
+                    db.AccountCustomStat.AddRange(newCustomStats);
 
                     AccountStatus newStatusData = new AccountStatus()
                     {

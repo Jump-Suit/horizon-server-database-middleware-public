@@ -3,17 +3,17 @@ using System.Collections.Generic;
 
 namespace Horizon.Database.Entities
 {
-    public partial class DimStats
+    public partial class DimCustomStats
     {
-        public DimStats()
+        public DimCustomStats()
         {
-            AccountStat = new HashSet<AccountStat>();
+            AccountCustomStat = new HashSet<AccountCustomStat>();
         }
 
         public int StatId { get; set; }
         public string StatName { get; set; }
         public int DefaultValue { get; set; }
 
-        public virtual ICollection<AccountStat> AccountStat { get; set; }
+        public virtual ICollection<AccountCustomStat> AccountCustomStat { get; set; }
     }
 }

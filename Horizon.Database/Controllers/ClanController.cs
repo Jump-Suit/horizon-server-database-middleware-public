@@ -47,6 +47,7 @@ namespace Horizon.Database.Controllers
                            .ThenInclude(cm => cm.Account)
                            .Include(c => c.ClanMessage)
                            .Include(c => c.ClanStat)
+                           .Include(c => c.ClanCustomStat)
                            .Include(c => c.ClanLeaderAccount)
                            .Include(c => c.ClanInvitation)
                            .ThenInclude(ci => ci.Account)
@@ -65,6 +66,7 @@ namespace Horizon.Database.Controllers
                 ClanMemberAccounts = clan.ClanMember.Where(cm => cm.IsActive == true).Select(cm => aServ.toAccountDTO(cm.Account)).ToList(),
                 ClanMediusStats = clan.MediusStats,
                 ClanWideStats = clan.ClanStat.OrderBy(stat => stat.StatId).Select(cs => cs.StatValue).ToList(),
+                ClanCustomWideStats = clan.ClanCustomStat.OrderBy(stat => stat.StatId).Select(cs => cs.StatValue).ToList(),
                 ClanMessages = clan.ClanMessage.OrderByDescending(cm => cm.Id).Select(cm => cs.toClanMessageDTO(cm)).ToList(),
                 ClanMemberInvitations = clan.ClanInvitation.Select(ci => cs.toClanInvitationDTO(ci)).ToList(),
             };
@@ -121,7 +123,7 @@ namespace Horizon.Database.Controllers
             };
             db.ClanMember.Add(newMember);
 
-            List<ClanStat> newStats = (from ds in db.DimStats
+            List<ClanStat> newStats = (from ds in db.DimClanStats
                                        select new ClanStat()
                                        {
                                            ClanId = newClan.ClanId,
@@ -129,6 +131,15 @@ namespace Horizon.Database.Controllers
                                            StatValue = ds.DefaultValue
                                        }).ToList();
             db.ClanStat.AddRange(newStats);
+
+            List<ClanCustomStat> newCustomStats = (from ds in db.DimClanCustomStats
+                                       select new ClanCustomStat()
+                                       {
+                                           ClanId = newClan.ClanId,
+                                           StatId = ds.StatId,
+                                           StatValue = ds.DefaultValue
+                                       }).ToList();
+            db.ClanCustomStat.AddRange(newCustomStats);
 
 
             db.SaveChanges();

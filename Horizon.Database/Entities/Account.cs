@@ -10,6 +10,7 @@ namespace Horizon.Database.Entities
             AccountFriend = new HashSet<AccountFriend>();
             AccountIgnored = new HashSet<AccountIgnored>();
             AccountStat = new HashSet<AccountStat>();
+            AccountCustomStat = new HashSet<AccountCustomStat>();
             Clan = new HashSet<Clan>();
             ClanInvitation = new HashSet<ClanInvitation>();
             ClanMember = new HashSet<ClanMember>();
@@ -31,6 +32,7 @@ namespace Horizon.Database.Entities
         public virtual ICollection<AccountFriend> AccountFriend { get; set; }
         public virtual ICollection<AccountIgnored> AccountIgnored { get; set; }
         public virtual ICollection<AccountStat> AccountStat { get; set; }
+        public virtual ICollection<AccountCustomStat> AccountCustomStat { get; set; }
         public virtual ICollection<Clan> Clan { get; set; }
         public virtual ICollection<ClanInvitation> ClanInvitation { get; set; }
         public virtual ICollection<ClanMember> ClanMember { get; set; }

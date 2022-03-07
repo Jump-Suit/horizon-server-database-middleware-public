@@ -7,6 +7,7 @@ using Horizon.Database.Entities;
 using Horizon.Database.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Horizon.Database.Controllers
 {
@@ -43,9 +44,26 @@ namespace Horizon.Database.Controllers
                                               StatValue = ds.DefaultValue
                                           }).ToList();
             db.AccountStat.AddRange(newStats);
+            List<AccountCustomStat> newCustomStats = (from ds in db.DimCustomStats
+                                          select new AccountCustomStat()
+                                          {
+                                              AccountId = existingAcc.AccountId,
+                                              StatId = ds.StatId,
+                                              StatValue = ds.DefaultValue
+                                          }).ToList();
+            db.AccountCustomStat.AddRange(newCustomStats);
             db.SaveChanges();
 
             return Ok("Stats Created");
+        }
+
+        [Authorize("database")]
+        [HttpGet, Route("validateStats")]
+        public async Task<dynamic> validateStats()
+        {
+            db.Database.ExecuteSqlRaw("EXEC [dbo].[SyncAccountCustomStats]");
+            db.Database.ExecuteSqlRaw("EXEC [dbo].[SyncClanCustomStats]");
+            return Ok("Stats Validated");
         }
 
         [Authorize]
@@ -66,6 +84,31 @@ namespace Horizon.Database.Controllers
                     Index = stats.IndexOf(statForAccount),
                     StartIndex = stats.IndexOf(statForAccount),
                     StatValue = statForAccount.StatValue,
+                    AccountName = acc.AccountName,
+                    MediusStats = acc.MediusStats
+                };
+            }
+            return StatusCode(400, $"Account {AccountId} is inactive.");
+        }
+
+        [Authorize]
+        [HttpGet, Route("getPlayerLeaderboardIndexCustom")]
+        public async Task<dynamic> getPlayerLeaderboardIndexCustom(int AccountId, int CustomStatId)
+        {
+            List<AccountCustomStat> stats = db.AccountCustomStat.Where(s => s.Account.IsActive == true && s.StatId == CustomStatId).OrderByDescending(s => s.StatValue).ThenBy(s => s.AccountId).ToList();
+            AccountCustomStat statForAccount = stats.Where(s => s.AccountId == AccountId).FirstOrDefault();
+            Account acc = db.Account.Where(a => a.AccountId == AccountId).FirstOrDefault();
+            AccountController ac = new AccountController(db, authService);
+            int totalAccounts = await ac.getActiveAccountCountByAppId((int)acc.AppId);
+            if (acc.IsActive == true)
+            {
+                return new LeaderboardDTO()
+                {
+                    TotalRankedAccounts = totalAccounts,
+                    AccountId = AccountId,
+                    Index = statForAccount == null ? totalAccounts - 1 : stats.IndexOf(statForAccount),
+                    StartIndex = statForAccount == null ? totalAccounts - 1 : stats.IndexOf(statForAccount),
+                    StatValue = statForAccount?.StatValue ?? 0,
                     AccountName = acc.AccountName,
                     MediusStats = acc.MediusStats
                 };
@@ -99,10 +142,60 @@ namespace Horizon.Database.Controllers
         }
 
         [Authorize]
+        [HttpGet, Route("getClanLeaderboardIndexCustom")]
+        public async Task<dynamic> getClanLeaderboardIndexCustom(int ClanId, int CustomStatId)
+        {
+            List<ClanCustomStat> stats = db.ClanCustomStat.Where(s => s.Clan.IsActive == true && s.StatId == CustomStatId).OrderByDescending(s => s.StatValue).ThenBy(s => s.ClanId).ToList();
+            ClanCustomStat statForClan = stats.Where(s => s.ClanId == ClanId).FirstOrDefault();
+            Clan clan = db.Clan.Where(a => a.ClanId == ClanId).FirstOrDefault();
+            ClanController cc = new ClanController(db, authService);
+            int totalClans = await cc.getActiveClanCountByAppId((int)clan.AppId);
+            if (clan.IsActive == true)
+            {
+                return new ClanLeaderboardDTO()
+                {
+                    TotalRankedClans = totalClans,
+                    ClanId = ClanId,
+                    Index = statForClan == null ? totalClans - 1 : stats.IndexOf(statForClan),
+                    StartIndex = statForClan == null ? totalClans - 1 : stats.IndexOf(statForClan),
+                    StatValue = statForClan?.StatValue ?? 0,
+                    ClanName = clan.ClanName,
+                    MediusStats = clan.MediusStats
+                };
+            }
+            return StatusCode(400, $"Clan {ClanId} is inactive.");
+        }
+
+        [Authorize]
         [HttpGet, Route("getLeaderboard")]
         public async Task<List<LeaderboardDTO>> getLeaderboard(int StatId, int StartIndex, int Size, int AppId)
         {
             List<AccountStat> stats = db.AccountStat.Where(s => s.Account.IsActive == true && s.StatId == StatId && s.Account.AppId == AppId).OrderByDescending(s => s.StatValue).ThenBy(s => s.AccountId).Skip(StartIndex).Take(Size).ToList();
+            AccountController ac = new AccountController(db, authService);
+
+            List<LeaderboardDTO> board = (from s in stats
+                                          join a in db.Account
+                                            on s.AccountId equals a.AccountId
+                                          where a.IsActive == true
+                                          select new LeaderboardDTO()
+                                          {
+                                              TotalRankedAccounts = 0,
+                                              StartIndex = StartIndex,
+                                              Index = StartIndex + stats.IndexOf(s),
+                                              AccountId = s.AccountId,
+                                              AccountName = a.AccountName,
+                                              StatValue = s.StatValue,
+                                              MediusStats = a.MediusStats
+                                          }).ToList();
+
+            return board;
+        }
+
+        [Authorize]
+        [HttpGet, Route("getLeaderboardCustom")]
+        public async Task<List<LeaderboardDTO>> getLeaderboardCustom(int CustomStatId, int StartIndex, int Size, int AppId)
+        {
+            List<AccountCustomStat> stats = db.AccountCustomStat.Where(s => s.Account.IsActive == true && s.StatId == CustomStatId && s.Account.AppId == AppId).OrderByDescending(s => s.StatValue).ThenBy(s => s.AccountId).Skip(StartIndex).Take(Size).ToList();
             AccountController ac = new AccountController(db, authService);
 
             List<LeaderboardDTO> board = (from s in stats
@@ -147,6 +240,30 @@ namespace Horizon.Database.Controllers
             return board;
         }
 
+        [Authorize]
+        [HttpGet, Route("getClanLeaderboardCustom")]
+        public async Task<List<ClanLeaderboardDTO>> getClanLeaderboardCustom(int CustomStatId, int StartIndex, int Size, int AppId)
+        {
+            List<ClanCustomStat> stats = db.ClanCustomStat.Where(s => s.Clan.IsActive == true && s.StatId == CustomStatId && s.Clan.AppId == AppId).OrderByDescending(s => s.StatValue).ThenBy(s => s.ClanId).Skip(StartIndex).Take(Size).ToList();
+
+            List<ClanLeaderboardDTO> board = (from s in stats
+                                              join c in db.Clan
+                                                on s.ClanId equals c.ClanId
+                                              where c.IsActive == true
+                                              select new ClanLeaderboardDTO()
+                                              {
+                                                  TotalRankedClans = 0,
+                                                  StartIndex = StartIndex,
+                                                  Index = StartIndex + stats.IndexOf(s),
+                                                  ClanId = s.ClanId,
+                                                  ClanName = c.ClanName,
+                                                  StatValue = s.StatValue,
+                                                  MediusStats = c.MediusStats
+                                              }).ToList();
+
+            return board;
+        }
+
         [Authorize("database")]
         [HttpPost, Route("postStats")]
         public async Task<dynamic> postStats([FromBody] StatPostDTO statData)
@@ -175,6 +292,40 @@ namespace Horizon.Database.Controllers
         }
 
         [Authorize("database")]
+        [HttpPost, Route("postStatsCustom")]
+        public async Task<dynamic> postStatsCustom([FromBody] StatPostDTO statData)
+        {
+            DateTime modifiedDt = DateTime.UtcNow;
+            List<AccountCustomStat> playerStats = db.AccountCustomStat.Where(s => s.AccountId == statData.AccountId).OrderBy(s => s.StatId).Select(s => s).ToList();
+
+            // populate custom stats if not already exists
+            for (int i = 0; i < statData.stats.Count; ++i)
+            {
+                AccountCustomStat existingStat = playerStats.Where(x => x.StatId == (i + 1)).FirstOrDefault();
+                if (existingStat == null)
+                {
+                    AccountCustomStat newStat = new AccountCustomStat()
+                    {
+                        StatId = i+1,
+                        AccountId = statData.AccountId,
+                        StatValue = statData.stats[i],
+                    };
+
+                    db.AccountCustomStat.Add(newStat);
+                }
+                else
+                {
+                    existingStat.StatValue = statData.stats[i];
+                    existingStat.ModifiedDt = DateTime.UtcNow;
+                }
+            }
+
+            db.SaveChanges();
+            return Ok();
+
+        }
+
+        [Authorize("database")]
         [HttpPost, Route("postClanStats")]
         public async Task<dynamic> postClanStats([FromBody] ClanStatPostDTO statData)
         {
@@ -194,6 +345,44 @@ namespace Horizon.Database.Controllers
 
                 db.ClanStat.Attach(cStat);
                 db.Entry(cStat).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
+            }
+
+            db.SaveChanges();
+            return Ok();
+
+        }
+
+        [Authorize("database")]
+        [HttpPost, Route("postClanStatsCustom")]
+        public async Task<dynamic> postClanStatsCustom([FromBody] ClanStatPostDTO statData)
+        {
+            DateTime modifiedDt = DateTime.UtcNow;
+            List<ClanCustomStat> clanStats = db.ClanCustomStat.Where(s => s.ClanId == statData.ClanId).OrderBy(s => s.StatId).Select(s => s).ToList();
+
+            int badStats = clanStats.Where(s => s.StatValue < 0).Count();
+            if (badStats > 0)
+                return BadRequest("Found a negative stat in array. Can't have those!");
+
+            // populate custom stats if not already exists
+            for (int i = 0; i < statData.stats.Count; ++i)
+            {
+                ClanCustomStat existingStat = clanStats.Where(x => x.StatId == (i+1)).FirstOrDefault();
+                if (existingStat == null)
+                {
+                    ClanCustomStat newStat = new ClanCustomStat()
+                    {
+                        StatId = i+1,
+                        ClanId = statData.ClanId,
+                        StatValue = statData.stats[i],
+                    };
+
+                    db.ClanCustomStat.Add(newStat);
+                }
+                else
+                {
+                    existingStat.StatValue = statData.stats[i];
+                    existingStat.ModifiedDt = DateTime.UtcNow;
+                }
             }
 
             db.SaveChanges();

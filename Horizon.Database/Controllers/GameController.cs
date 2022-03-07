@@ -46,7 +46,7 @@ namespace Horizon.Database.Controllers
             }
         }
 
-        //[Authorize("stats_bot")]
+        [Authorize("stats_bot")]
         [HttpGet, Route("history/{appId}")]
         public async Task<dynamic> getGameHistory(int appId, int pageIndex, int pageSize)
         {

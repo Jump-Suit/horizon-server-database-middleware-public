@@ -19,6 +19,7 @@ namespace Horizon.Database.Entities
         public virtual DbSet<AccountFriend> AccountFriend { get; set; }
         public virtual DbSet<AccountIgnored> AccountIgnored { get; set; }
         public virtual DbSet<AccountStat> AccountStat { get; set; }
+        public virtual DbSet<AccountCustomStat> AccountCustomStat { get; set; }
         public virtual DbSet<AccountStatus> AccountStatus { get; set; }
         public virtual DbSet<Banned> Banned { get; set; }
         public virtual DbSet<BannedIp> BannedIp { get; set; }
@@ -28,9 +29,13 @@ namespace Horizon.Database.Entities
         public virtual DbSet<ClanMember> ClanMember { get; set; }
         public virtual DbSet<ClanMessage> ClanMessage { get; set; }
         public virtual DbSet<ClanStat> ClanStat { get; set; }
+        public virtual DbSet<ClanCustomStat> ClanCustomStat { get; set; }
         public virtual DbSet<DimAnnouncements> DimAnnouncements { get; set; }
         public virtual DbSet<DimEula> DimEula { get; set; }
         public virtual DbSet<DimStats> DimStats { get; set; }
+        public virtual DbSet<DimClanStats> DimClanStats { get; set; }
+        public virtual DbSet<DimCustomStats> DimCustomStats { get; set; }
+        public virtual DbSet<DimClanCustomStats> DimClanCustomStats { get; set; }
         public virtual DbSet<Game> Game { get; set; }
         public virtual DbSet<GameHistory> GameHistory { get; set; }
         public virtual DbSet<Roles> Roles { get; set; }
@@ -153,6 +158,33 @@ namespace Horizon.Database.Entities
                     .HasForeignKey(d => d.StatId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_account_stat_dim_stats");
+            });
+
+            modelBuilder.Entity<AccountCustomStat>(entity =>
+            {
+                entity.ToTable("account_custom_stat", "STATS");
+
+                entity.Property(e => e.Id).HasColumnName("id");
+
+                entity.Property(e => e.AccountId).HasColumnName("account_id");
+
+                entity.Property(e => e.ModifiedDt).HasColumnName("modified_dt");
+
+                entity.Property(e => e.StatId).HasColumnName("stat_id");
+
+                entity.Property(e => e.StatValue).HasColumnName("stat_value");
+
+                entity.HasOne(d => d.Account)
+                    .WithMany(p => p.AccountCustomStat)
+                    .HasForeignKey(d => d.AccountId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_account_custom_stat_account");
+
+                entity.HasOne(d => d.Stat)
+                    .WithMany(p => p.AccountCustomStat)
+                    .HasForeignKey(d => d.StatId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_account_custom_stat_dim_stats");
             });
 
             modelBuilder.Entity<AccountStatus>(entity =>
@@ -412,6 +444,33 @@ namespace Horizon.Database.Entities
                     .HasConstraintName("FK_clan_stat_dim_stats");
             });
 
+            modelBuilder.Entity<ClanCustomStat>(entity =>
+            {
+                entity.ToTable("clan_custom_stat", "STATS");
+
+                entity.Property(e => e.Id).HasColumnName("id");
+
+                entity.Property(e => e.ClanId).HasColumnName("clan_id");
+
+                entity.Property(e => e.ModifiedDt).HasColumnName("modified_dt");
+
+                entity.Property(e => e.StatId).HasColumnName("stat_id");
+
+                entity.Property(e => e.StatValue).HasColumnName("stat_value");
+
+                entity.HasOne(d => d.Clan)
+                    .WithMany(p => p.ClanCustomStat)
+                    .HasForeignKey(d => d.ClanId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_clan_custom_stat_clan");
+
+                entity.HasOne(d => d.Stat)
+                    .WithMany(p => p.ClanCustomStat)
+                    .HasForeignKey(d => d.StatId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_clan_custom_stat_dim_stats");
+            });
+
             modelBuilder.Entity<DimAnnouncements>(entity =>
             {
                 entity.ToTable("dim_announcements", "KEYS");
@@ -476,6 +535,54 @@ namespace Horizon.Database.Entities
                 entity.HasKey(e => e.StatId);
 
                 entity.ToTable("dim_stats", "KEYS");
+
+                entity.Property(e => e.StatId).HasColumnName("stat_id");
+
+                entity.Property(e => e.DefaultValue).HasColumnName("default_value");
+
+                entity.Property(e => e.StatName)
+                    .IsRequired()
+                    .HasColumnName("stat_name")
+                    .HasMaxLength(100);
+            });
+
+            modelBuilder.Entity<DimCustomStats>(entity =>
+            {
+                entity.HasKey(e => e.StatId);
+
+                entity.ToTable("dim_custom_stats", "KEYS");
+
+                entity.Property(e => e.StatId).HasColumnName("stat_id");
+
+                entity.Property(e => e.DefaultValue).HasColumnName("default_value");
+
+                entity.Property(e => e.StatName)
+                    .IsRequired()
+                    .HasColumnName("stat_name")
+                    .HasMaxLength(100);
+            });
+
+            modelBuilder.Entity<DimClanStats>(entity =>
+            {
+                entity.HasKey(e => e.StatId);
+
+                entity.ToTable("dim_clan_stats", "KEYS");
+
+                entity.Property(e => e.StatId).HasColumnName("stat_id");
+
+                entity.Property(e => e.DefaultValue).HasColumnName("default_value");
+
+                entity.Property(e => e.StatName)
+                    .IsRequired()
+                    .HasColumnName("stat_name")
+                    .HasMaxLength(100);
+            });
+
+            modelBuilder.Entity<DimClanCustomStats>(entity =>
+            {
+                entity.HasKey(e => e.StatId);
+
+                entity.ToTable("dim_clan_custom_stats", "KEYS");
 
                 entity.Property(e => e.StatId).HasColumnName("stat_id");
 

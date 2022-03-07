@@ -14,6 +14,7 @@ namespace Horizon.Database.DTO
         public List<AccountRelationDTO> Friends { get; set; }
         public List<AccountRelationDTO> Ignored { get; set; }
         public List<int> AccountWideStats { get; set; }
+        public List<int> AccountCustomWideStats { get; set; }
         public string MediusStats { get; set; }
         public string MachineId { get; set; }
         public bool IsBanned { get; set; }
