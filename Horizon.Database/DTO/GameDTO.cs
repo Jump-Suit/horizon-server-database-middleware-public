@@ -33,5 +33,6 @@ namespace Horizon.Database.DTO
         public DateTime? GameCreateDt { get; set; }
         public DateTime? GameStartDt { get; set; }
         public DateTime? GameEndDt { get; set; }
+        public bool Destroyed { get; set; }
     }
 }

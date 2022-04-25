@@ -157,7 +157,7 @@ namespace Horizon.Database.Controllers
             if (existingGame != null)
             {
                 // Catalog the historical game
-                if (game.GameEndDt != null)
+                if (game.Destroyed)
                 {
                     GameHistory newHistoricalGame = new GameHistory()
                     {
