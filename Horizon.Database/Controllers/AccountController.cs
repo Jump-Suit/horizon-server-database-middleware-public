@@ -118,7 +118,7 @@ namespace Horizon.Database.Controllers
                     AccountId = ignoredId,
                     AccountName = accountList.Where(a => a.AccountId == ignoredId).Select(a => a.AccountName).FirstOrDefault()
                 };
-                account2.Friends.Add(friendDTO);
+                account2.Ignored.Add(friendDTO);
             }
 
             return account2;
