@@ -175,6 +175,7 @@ namespace Horizon.Database
             }
 
             app.UseMiddleware<JwtMiddleware>();
+            app.UseMiddleware<RequestLoggingMiddleware>();
             //app.UseMiddleware<ExceptionMiddleware>();
 
             // Enable middleware to serve generated Swagger as a JSON endpoint.

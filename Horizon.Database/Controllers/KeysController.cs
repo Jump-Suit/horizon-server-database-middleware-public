@@ -154,7 +154,7 @@ namespace Horizon.Database.Controllers
                 Dt = DateTime.UtcNow;
             DateTime now = DateTime.UtcNow;
             announcements = (from a in db.DimAnnouncements
-                             orderby a.FromDt
+                             orderby a.FromDt descending
                             where a.AppId == AppId && a.FromDt <= Dt
                     && (a.ToDt == null || a.ToDt >= Dt)
                             select a).Take(TakeSize).ToList();

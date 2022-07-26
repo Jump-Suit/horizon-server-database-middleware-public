@@ -222,10 +222,10 @@ namespace Horizon.Database.Controllers
 
         [Authorize("database")]
         [HttpGet, Route("deleteAccount")]
-        public async Task<dynamic> deleteAccount(string AccountName)
+        public async Task<dynamic> deleteAccount(string AccountName, int AppId)
         {
             DateTime now = DateTime.UtcNow;
-            Account existingAccount = db.Account.Where(a => a.AccountName == AccountName).FirstOrDefault();
+            Account existingAccount = db.Account.Where(a => a.AccountName == AccountName && a.AppId == AppId).FirstOrDefault();
             if(existingAccount == null || existingAccount.IsActive == false)
             {
                 return StatusCode(403, "Cannot delete an account that doesn't exist.");
