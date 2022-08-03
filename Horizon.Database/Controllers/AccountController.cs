@@ -39,22 +39,19 @@ namespace Horizon.Database.Controllers
         }
 
         [Authorize]
-        [HttpGet, Route("getAccountExists")]
-        public async Task<bool> getAccountExists(string AccountName)
-        {
-            Account acc = (from a in db.Account
-                           where a.AccountName == AccountName
-                           && a.IsActive == true
-                           select a).FirstOrDefault();
-            return acc != null;
-        }
-
-        [Authorize]
         [HttpGet, Route("getActiveAccountCountByAppId")]
         public async Task<int> getActiveAccountCountByAppId(int AppId)
         {
-            int accountCount = (from a in db.Account
+            var app_id_group = (from a in db.DimAppIds
                                 where a.AppId == AppId
+                                select a.GroupId).FirstOrDefault();
+
+            var app_ids_in_group = (from a in db.DimAppIds
+                                    where (a.GroupId == app_id_group && a.GroupId != null) || a.AppId == AppId
+                                    select a.AppId).ToList();
+
+            int accountCount = (from a in db.Account
+                                where app_ids_in_group.Contains(a.AppId ?? -1)
                                 && a.IsActive == true
                                 select a).Count();
             return accountCount;
@@ -255,7 +252,15 @@ namespace Horizon.Database.Controllers
         [HttpGet, Route("searchAccountByName")]
         public async Task<dynamic> searchAccountByName(string AccountName, int AppId)
         {
-            Account existingAccount = db.Account.Where(a => a.AppId == AppId && a.AccountName == AccountName && a.IsActive == true).FirstOrDefault();
+            var app_id_group = (from a in db.DimAppIds
+                                where a.AppId == AppId
+                                select a.GroupId).FirstOrDefault();
+
+            var app_ids_in_group = (from a in db.DimAppIds
+                                    where (a.GroupId == app_id_group && a.GroupId != null) || a.AppId == AppId
+                                    select a.AppId).ToList();
+
+            Account existingAccount = db.Account.Where(a => app_ids_in_group.Contains(a.AppId ?? -1) && a.AccountName == AccountName && a.IsActive == true).FirstOrDefault();
             if (existingAccount == null)
                 return NotFound();
 
@@ -399,7 +404,7 @@ namespace Horizon.Database.Controllers
                     s.WorldId,
                     s.GameId,
                     s.GameName,
-                    s.ChannelId,
+                    s.ChannelId
                 });
 
             return results;

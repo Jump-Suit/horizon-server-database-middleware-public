@@ -13,6 +13,7 @@ namespace Horizon.Database.Entities
         public int StatId { get; set; }
         public string StatName { get; set; }
         public int DefaultValue { get; set; }
+        public int AppId { get; set; }
 
         public virtual ICollection<ClanCustomStat> ClanCustomStat { get; set; }
     }

@@ -1,6 +1,4 @@
-﻿using System;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata;
+﻿using Microsoft.EntityFrameworkCore;
 
 namespace Horizon.Database.Entities
 {
@@ -31,6 +29,8 @@ namespace Horizon.Database.Entities
         public virtual DbSet<ClanStat> ClanStat { get; set; }
         public virtual DbSet<ClanCustomStat> ClanCustomStat { get; set; }
         public virtual DbSet<DimAnnouncements> DimAnnouncements { get; set; }
+        public virtual DbSet<DimAppGroups> DimAppGroups { get; set; }
+        public virtual DbSet<DimAppIds> DimAppIds { get; set; }
         public virtual DbSet<DimEula> DimEula { get; set; }
         public virtual DbSet<DimStats> DimStats { get; set; }
         public virtual DbSet<DimClanStats> DimClanStats { get; set; }
@@ -38,9 +38,12 @@ namespace Horizon.Database.Entities
         public virtual DbSet<DimClanCustomStats> DimClanCustomStats { get; set; }
         public virtual DbSet<Game> Game { get; set; }
         public virtual DbSet<GameHistory> GameHistory { get; set; }
+        public virtual DbSet<Channels> Channels { get; set; }
+        public virtual DbSet<Locations> Locations { get; set; }
         public virtual DbSet<Roles> Roles { get; set; }
         public virtual DbSet<ServerFlags> ServerFlags { get; set; }
         public virtual DbSet<ServerLog> ServerLog { get; set; }
+        public virtual DbSet<ServerSetting> ServerSettings { get; set; }
         public virtual DbSet<UserRole> UserRole { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -502,6 +505,36 @@ namespace Horizon.Database.Entities
                 entity.Property(e => e.AppId).HasColumnName("app_id");
             });
 
+            modelBuilder.Entity<DimAppGroups>(entity =>
+            {
+                entity.HasKey(e => e.GroupId);
+
+                entity.ToTable("dim_app_groups", "KEYS");
+
+                entity.Property(e => e.GroupId).HasColumnName("group_id");
+
+                entity.Property(e => e.GroupName)
+                    .IsRequired()
+                    .HasColumnName("group_name")
+                    .HasMaxLength(250);
+            });
+
+            modelBuilder.Entity<DimAppIds>(entity =>
+            {
+                entity.HasKey(e => e.AppId);
+
+                entity.ToTable("dim_app_ids", "KEYS");
+
+                entity.Property(e => e.AppId).HasColumnName("app_id");
+
+                entity.Property(e => e.AppName)
+                    .IsRequired()
+                    .HasColumnName("app_name")
+                    .HasMaxLength(250);
+
+                entity.Property(e => e.GroupId).HasColumnName("group_id");
+            });
+
             modelBuilder.Entity<DimEula>(entity =>
             {
                 entity.ToTable("dim_eula", "KEYS");
@@ -560,6 +593,8 @@ namespace Horizon.Database.Entities
                     .IsRequired()
                     .HasColumnName("stat_name")
                     .HasMaxLength(100);
+
+                entity.Property(e => e.AppId).HasColumnName("app_id");
             });
 
             modelBuilder.Entity<DimClanStats>(entity =>
@@ -592,6 +627,8 @@ namespace Horizon.Database.Entities
                     .IsRequired()
                     .HasColumnName("stat_name")
                     .HasMaxLength(100);
+
+                entity.Property(e => e.AppId).HasColumnName("app_id");
             });
 
             modelBuilder.Entity<Game>(entity =>
@@ -746,6 +783,43 @@ namespace Horizon.Database.Entities
                     .HasMaxLength(32);
             });
 
+            modelBuilder.Entity<Locations>(entity =>
+            {
+                entity.HasKey(e => new { e.Id, e.AppId });
+
+                entity.ToTable("locations", "WORLD");
+
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.AppId).HasColumnName("app_id");
+
+                entity.Property(e => e.Name)
+                    .IsRequired()
+                    .HasColumnName("name")
+                    .HasMaxLength(50);
+            });
+
+            modelBuilder.Entity<Channels>(entity =>
+            {
+                entity.HasKey(e => new { e.Id, e.AppId });
+
+                entity.ToTable("channels", "WORLD");
+
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.AppId).HasColumnName("app_id");
+
+                entity.Property(e => e.Name)
+                    .IsRequired()
+                    .HasColumnName("name")
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.MaxPlayers).HasColumnName("max_players");
+                entity.Property(e => e.GenericField1).HasColumnName("generic_field_1");
+                entity.Property(e => e.GenericField2).HasColumnName("generic_field_2");
+                entity.Property(e => e.GenericField3).HasColumnName("generic_field_3");
+                entity.Property(e => e.GenericField4).HasColumnName("generic_field_4");
+                entity.Property(e => e.GenericFieldFilter).HasColumnName("generic_field_filter");
+            });
+
             modelBuilder.Entity<Roles>(entity =>
             {
                 entity.HasKey(e => e.RoleId);
@@ -818,6 +892,23 @@ namespace Horizon.Database.Entities
                     .HasMaxLength(50);
 
                 entity.Property(e => e.Payload).HasColumnName("payload");
+            });
+
+            modelBuilder.Entity<ServerSetting>(entity =>
+            {
+                entity.HasKey(e => new { e.AppId, e.Name });
+
+                entity.ToTable("server_settings", "KEYS");
+
+                entity.Property(e => e.AppId).HasColumnName("app_id");
+
+                entity.Property(e => e.Name)
+                    .IsRequired()
+                    .HasColumnName("name")
+                    .HasMaxLength(250);
+
+                entity.Property(e => e.Value)
+                    .HasColumnName("value");
             });
 
             modelBuilder.Entity<UserRole>(entity =>

@@ -50,7 +50,15 @@ namespace Horizon.Database.Controllers
         [HttpGet, Route("history/{appId}")]
         public async Task<dynamic> getGameHistory(int appId, int pageIndex, int pageSize)
         {
-            var games = db.GameHistory.Where(g => g.AppId == appId);
+            var app_id_group = (from a in db.DimAppIds
+                                where a.AppId == appId
+                                select a.GroupId).FirstOrDefault();
+
+            var app_ids_in_group = (from a in db.DimAppIds
+                                    where (a.GroupId == app_id_group && a.GroupId != null) || a.AppId == appId
+                                    select a.AppId).ToList();
+
+            var games = db.GameHistory.Where(g => app_ids_in_group.Contains(g.AppId));
             var pageCount = games.Count() / pageSize;
 
             if (games != null)

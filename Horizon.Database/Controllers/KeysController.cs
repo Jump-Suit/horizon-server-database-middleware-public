@@ -22,6 +22,93 @@ namespace Horizon.Database.Controllers
         }
 
         [Authorize("database")]
+        [HttpGet, Route("getAppIds")]
+        public async Task<List<AppIdDTO>> getAppIds()   
+        {
+            List<DimAppIds> app_ids = null;
+            List<DimAppGroups> app_groups = null;
+            List<AppIdDTO> results = new List<AppIdDTO>();
+
+            app_ids = await (from app_id in db.DimAppIds
+                       select app_id).ToListAsync();
+            app_groups = await (from app_group in db.DimAppGroups
+                             select app_group).ToListAsync();
+
+            var groupings = app_ids.GroupBy(x => x.GroupId);
+            foreach (var grouping in groupings)
+            {
+                var group = app_groups.FirstOrDefault(x => x.GroupId == grouping.Key);
+
+                if (group == null)
+                    results.AddRange(grouping.Select(x => new AppIdDTO() { Name = x.AppName, AppIds = new List<int>() { x.AppId } }));
+                else
+                    results.Add(new AppIdDTO() { Name = group.GroupName, AppIds = grouping.Select(x => x.AppId).ToList() });
+            }
+
+            return results;
+        }
+
+        [Authorize("database")]
+        [HttpGet, Route("isAppIdCompatible")]
+        public async Task<List<AppIdDTO>> isAppIdCompatible(int appId)
+        {
+            List<DimAppIds> app_ids = null;
+            List<DimAppGroups> app_groups = null;
+            List<AppIdDTO> results = new List<AppIdDTO>();
+
+            app_ids = await (from app_id in db.DimAppIds
+                             select app_id).ToListAsync();
+            app_groups = await (from app_group in db.DimAppGroups
+                                select app_group).ToListAsync();
+
+            var groupings = app_ids.GroupBy(x => x.GroupId);
+            foreach (var grouping in groupings)
+            {
+                var group = app_groups.FirstOrDefault(x => x.GroupId == grouping.Key);
+
+                if (group == null)
+                    results.AddRange(grouping.Select(x => new AppIdDTO() { Name = x.AppName, AppIds = new List<int>() { x.AppId } }));
+                else
+                    results.Add(new AppIdDTO() { Name = group.GroupName, AppIds = grouping.Select(x => x.AppId).ToList() });
+            }
+
+            return results;
+        }
+
+        [Authorize("database")]
+        [HttpGet, Route("getSettings")]
+        public async Task<Dictionary<string, string>> getSettings(int appId)
+        {
+            var settings = await (from s in db.ServerSettings
+                            where s.AppId == appId
+                            select new { s.Name, s.Value }).ToDictionaryAsync(x => x.Name, x => x.Value);
+
+            return settings;
+        }
+
+        [Authorize("database")]
+        [HttpPost, Route("setSettings")]
+        public void setSettings(int appId, [FromBody] Dictionary<string, string> settings)
+        {
+            foreach (var setting in settings)
+            {
+                var existingSetting = db.ServerSettings.Find(appId, setting.Key);
+                if (existingSetting == null)
+                {
+                    existingSetting = new ServerSetting() { AppId = appId, Name = setting.Key, Value = setting.Value };
+                    db.ServerSettings.Add(existingSetting);
+                }
+                else
+                {
+                    existingSetting.Value = setting.Value;
+                    db.ServerSettings.Update(existingSetting);
+                }
+            }
+
+            db.SaveChanges();
+        }
+
+        [Authorize("database")]
         [HttpGet, Route("getEULA")]
         public async Task<dynamic> getEULA(int? eulaId, DateTime? fromDt, DateTime? toDt)
         {

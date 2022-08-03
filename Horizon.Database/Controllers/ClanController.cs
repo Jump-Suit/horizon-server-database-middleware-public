@@ -28,8 +28,16 @@ namespace Horizon.Database.Controllers
         [HttpGet, Route("getActiveClanCountByAppId")]
         public async Task<int> getActiveClanCountByAppId(int AppId)
         {
+            var app_id_group = (from a in db.DimAppIds
+                                where a.AppId == AppId
+                                select a.GroupId).FirstOrDefault();
+
+            var app_ids_in_group = (from a in db.DimAppIds
+                                    where (a.GroupId == app_id_group && a.GroupId != null) || a.AppId == AppId
+                                    select a.AppId).ToList();
+
             int accountCount = (from c in db.Clan
-                                where c.AppId == AppId
+                                where app_ids_in_group.Contains(c.AppId ?? -1)
                                 && c.IsActive == true
                                 select c).Count();
             return accountCount;
@@ -78,7 +86,15 @@ namespace Horizon.Database.Controllers
         [HttpGet, Route("searchClanByName")]
         public async Task<dynamic> searchClanByName(string clanName, int appId)
         {
-            int clanId = db.Clan.Where(c => c.IsActive == true && c.AppId == appId && c.ClanName.ToLower() == clanName.ToLower()).Select(c => c.ClanId).FirstOrDefault();
+            var app_id_group = (from a in db.DimAppIds
+                                where a.AppId == appId
+                                select a.GroupId).FirstOrDefault();
+
+            var app_ids_in_group = (from a in db.DimAppIds
+                                    where (a.GroupId == app_id_group && a.GroupId != null) || a.AppId == appId
+                                    select a.AppId).ToList();
+
+            int clanId = db.Clan.Where(c => c.IsActive == true && app_ids_in_group.Contains(c.AppId ?? -1) && c.ClanName.ToLower() == clanName.ToLower()).Select(c => c.ClanId).FirstOrDefault();
 
             if (clanId != 0)
             {

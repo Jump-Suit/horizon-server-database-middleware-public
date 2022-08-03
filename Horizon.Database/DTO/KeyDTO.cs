@@ -20,4 +20,10 @@ namespace Horizon.Database.DTO
         public DateTime? FromDt { get; set; }
         public DateTime? ToDt { get; set; }
     }
+
+    public class AppIdDTO
+    {
+        public string Name { get; set; }
+        public List<int> AppIds { get; set; }
+    }
 }

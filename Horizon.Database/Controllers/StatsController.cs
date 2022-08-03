@@ -68,9 +68,18 @@ namespace Horizon.Database.Controllers
 
         [Authorize]
         [HttpGet, Route("getPlayerLeaderboardIndex")]
-        public async Task<dynamic> getPlayerLeaderboardIndex(int AccountId, int StatId)
+        public async Task<dynamic> getPlayerLeaderboardIndex(int AccountId, int StatId, int AppId)
         {
-            List<AccountStat> stats = db.AccountStat.Where(s => s.Account.IsActive == true && s.StatId == StatId).OrderByDescending(s => s.StatValue).ThenBy(s => s.AccountId).ToList();
+            var app_id_group = (from a in db.DimAppIds
+                                where a.AppId == AppId
+                                select a.GroupId).FirstOrDefault();
+
+            var app_ids_in_group = (from a in db.DimAppIds
+                                    where (a.GroupId == app_id_group && a.GroupId != null) || a.AppId == AppId
+                                    select a.AppId).ToList();
+
+
+            List<AccountStat> stats = db.AccountStat.Where(s => s.Account.IsActive == true && s.StatId == StatId && app_ids_in_group.Contains(s.Account.AppId ?? -1)).OrderByDescending(s => s.StatValue).ThenBy(s => s.AccountId).ToList();
             AccountStat statForAccount = stats.Where(s => s.AccountId == AccountId).FirstOrDefault();
             Account acc = db.Account.Where(a => a.AccountId == AccountId).FirstOrDefault();
             AccountController ac = new AccountController(db, authService);
@@ -93,9 +102,17 @@ namespace Horizon.Database.Controllers
 
         [Authorize]
         [HttpGet, Route("getPlayerLeaderboardIndexCustom")]
-        public async Task<dynamic> getPlayerLeaderboardIndexCustom(int AccountId, int CustomStatId)
+        public async Task<dynamic> getPlayerLeaderboardIndexCustom(int AccountId, int CustomStatId, int AppId)
         {
-            List<AccountCustomStat> stats = db.AccountCustomStat.Where(s => s.Account.IsActive == true && s.StatId == CustomStatId).OrderByDescending(s => s.StatValue).ThenBy(s => s.AccountId).ToList();
+            var app_id_group = (from a in db.DimAppIds
+                                where a.AppId == AppId
+                                select a.GroupId).FirstOrDefault();
+
+            var app_ids_in_group = (from a in db.DimAppIds
+                                    where (a.GroupId == app_id_group && a.GroupId != null) || a.AppId == AppId
+                                    select a.AppId).ToList();
+
+            List<AccountCustomStat> stats = db.AccountCustomStat.Where(s => s.Account.IsActive == true && s.StatId == CustomStatId && app_ids_in_group.Contains(s.Account.AppId ?? -1)).OrderByDescending(s => s.StatValue).ThenBy(s => s.AccountId).ToList();
             AccountCustomStat statForAccount = stats.Where(s => s.AccountId == AccountId).FirstOrDefault();
             Account acc = db.Account.Where(a => a.AccountId == AccountId).FirstOrDefault();
             AccountController ac = new AccountController(db, authService);
@@ -118,9 +135,17 @@ namespace Horizon.Database.Controllers
 
         [Authorize]
         [HttpGet, Route("getClanLeaderboardIndex")]
-        public async Task<dynamic> getClanLeaderboardIndex(int ClanId, int StatId)
+        public async Task<dynamic> getClanLeaderboardIndex(int ClanId, int StatId, int AppId)
         {
-            List<ClanStat> stats = db.ClanStat.Where(s => s.Clan.IsActive == true && s.StatId == StatId).OrderByDescending(s => s.StatValue).ThenBy(s => s.ClanId).ToList();
+            var app_id_group = (from a in db.DimAppIds
+                                where a.AppId == AppId
+                                select a.GroupId).FirstOrDefault();
+
+            var app_ids_in_group = (from a in db.DimAppIds
+                                    where (a.GroupId == app_id_group && a.GroupId != null) || a.AppId == AppId
+                                    select a.AppId).ToList();
+
+            List<ClanStat> stats = db.ClanStat.Where(s => s.Clan.IsActive == true && s.StatId == StatId && app_ids_in_group.Contains(s.Clan.AppId ?? -1)).OrderByDescending(s => s.StatValue).ThenBy(s => s.ClanId).ToList();
             ClanStat statForClan = stats.Where(s => s.ClanId == ClanId).FirstOrDefault();
             Clan clan = db.Clan.Where(a => a.ClanId == ClanId).FirstOrDefault();
             ClanController cc = new ClanController(db, authService);
@@ -143,9 +168,17 @@ namespace Horizon.Database.Controllers
 
         [Authorize]
         [HttpGet, Route("getClanLeaderboardIndexCustom")]
-        public async Task<dynamic> getClanLeaderboardIndexCustom(int ClanId, int CustomStatId)
+        public async Task<dynamic> getClanLeaderboardIndexCustom(int ClanId, int CustomStatId, int AppId)
         {
-            List<ClanCustomStat> stats = db.ClanCustomStat.Where(s => s.Clan.IsActive == true && s.StatId == CustomStatId).OrderByDescending(s => s.StatValue).ThenBy(s => s.ClanId).ToList();
+            var app_id_group = (from a in db.DimAppIds
+                                where a.AppId == AppId
+                                select a.GroupId).FirstOrDefault();
+
+            var app_ids_in_group = (from a in db.DimAppIds
+                                    where (a.GroupId == app_id_group && a.GroupId != null) || a.AppId == AppId
+                                    select a.AppId).ToList();
+
+            List<ClanCustomStat> stats = db.ClanCustomStat.Where(s => s.Clan.IsActive == true && s.StatId == CustomStatId && app_ids_in_group.Contains(s.Clan.AppId ?? -1)).OrderByDescending(s => s.StatValue).ThenBy(s => s.ClanId).ToList();
             ClanCustomStat statForClan = stats.Where(s => s.ClanId == ClanId).FirstOrDefault();
             Clan clan = db.Clan.Where(a => a.ClanId == ClanId).FirstOrDefault();
             ClanController cc = new ClanController(db, authService);
