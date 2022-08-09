@@ -849,3 +849,10 @@ BEGIN
     INSERT INTO [KEYS].[dim_clan_stats] VALUES('STAT', 0)
     SET @i += 1
 END
+
+/* middleware has a few roles it relies on */
+INSERT INTO [KEYS].[roles] VALUES('database', GETDATE(), 1)
+INSERT INTO [KEYS].[roles] VALUES('admin', GETDATE(), 1)
+INSERT INTO [KEYS].[roles] VALUES('moderator', GETDATE(), 1)
+INSERT INTO [KEYS].[roles] VALUES('discord_bot', GETDATE(), 1)
+INSERT INTO [KEYS].[roles] VALUES('stats_bot', GETDATE(), 1)
