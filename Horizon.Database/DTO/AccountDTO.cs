@@ -41,6 +41,7 @@ namespace Horizon.Database.DTO
 
     public class AccountStatusDTO
     {
+        public int AppId { get; set; }
         public int AccountId { get; set; }
         public bool LoggedIn { get; set; }
         public int? GameId { get; set; }

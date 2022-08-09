@@ -196,6 +196,8 @@ namespace Horizon.Database.Entities
 
                 entity.Property(e => e.Id).HasColumnName("id");
 
+                entity.Property(e => e.AppId).HasColumnName("app_id");
+
                 entity.Property(e => e.AccountId).HasColumnName("account_id");
 
                 entity.Property(e => e.ChannelId).HasColumnName("channel_id");
@@ -209,6 +211,10 @@ namespace Horizon.Database.Entities
                 entity.Property(e => e.LoggedIn).HasColumnName("logged_in");
 
                 entity.Property(e => e.WorldId).HasColumnName("world_id");
+
+                entity.Property(e => e.DatabaseUser)
+                    .HasColumnName("database_user")
+                    .HasMaxLength(32);
             });
 
             modelBuilder.Entity<Banned>(entity =>
@@ -705,6 +711,10 @@ namespace Horizon.Database.Entities
                     .IsRequired()
                     .HasColumnName("world_status")
                     .HasMaxLength(32);
+
+                entity.Property(e => e.DatabaseUser)
+                    .HasColumnName("database_user")
+                    .HasMaxLength(32);
             });
 
             modelBuilder.Entity<GameHistory>(entity =>
@@ -780,6 +790,10 @@ namespace Horizon.Database.Entities
                 entity.Property(e => e.WorldStatus)
                     .IsRequired()
                     .HasColumnName("world_status")
+                    .HasMaxLength(32);
+
+                entity.Property(e => e.DatabaseUser)
+                    .HasColumnName("database_user")
                     .HasMaxLength(32);
             });
 

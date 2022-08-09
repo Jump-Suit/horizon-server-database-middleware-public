@@ -8,6 +8,7 @@ using Horizon.Database.Entities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Horizon.Database.Helpers;
 
 namespace Horizon.Database.Controllers
 {
@@ -108,6 +109,7 @@ namespace Horizon.Database.Controllers
                 existingGame.GameCreateDt = game.GameCreateDt;
                 existingGame.GameStartDt = game.GameStartDt;
                 existingGame.Metadata = game.Metadata;
+                existingGame.DatabaseUser = HttpContext.GetUsernameOrDefault();
 
                 db.SaveChanges();
 
@@ -149,6 +151,7 @@ namespace Horizon.Database.Controllers
                 GameHostType = game.GameHostType,
                 Metadata = game.Metadata,
                 GameCreateDt = game.GameCreateDt ?? DateTime.UtcNow,
+                DatabaseUser = HttpContext.GetUsernameOrDefault(),
             };
             db.Game.Add(newGame);
             db.SaveChanges();
@@ -195,6 +198,7 @@ namespace Horizon.Database.Controllers
                         GameCreateDt = game.GameCreateDt,
                         GameStartDt = game.GameStartDt,
                         GameEndDt = game.GameEndDt,
+                        DatabaseUser = HttpContext.GetUsernameOrDefault()
                     };
                     db.GameHistory.Add(newHistoricalGame);
                     db.SaveChanges();
@@ -229,6 +233,7 @@ namespace Horizon.Database.Controllers
                     existingGame.GameHostType = game.GameHostType;
                     existingGame.GameCreateDt = game.GameCreateDt;
                     existingGame.GameStartDt = game.GameStartDt;
+                    existingGame.DatabaseUser = HttpContext.GetUsernameOrDefault();
 
                     db.SaveChanges();
 

@@ -31,5 +31,6 @@ namespace Horizon.Database.Entities
         public string Metadata { get; set; }
         public DateTime? GameCreateDt { get; set; }
         public DateTime? GameStartDt { get; set; }
+        public string DatabaseUser { get; set; }
     }
 }

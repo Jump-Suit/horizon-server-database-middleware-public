@@ -12,6 +12,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Horizon.Database.Models;
 using Horizon.Database.Services;
+using Horizon.Database.Helpers;
 
 namespace Horizon.Database.Controllers
 {
@@ -176,11 +177,14 @@ namespace Horizon.Database.Controllers
 
                     AccountStatus newStatusData = new AccountStatus()
                     {
+                        AppId = acc.AppId ?? 0,
                         AccountId = acc.AccountId,
+                        GameName = null,
                         LoggedIn = false,
                         GameId = null,
                         ChannelId = null,
-                        WorldId = null
+                        WorldId = null,
+                        DatabaseUser = HttpContext.GetUsernameOrDefault()
                     };
                     db.AccountStatus.Add(newStatusData);
 
@@ -358,13 +362,15 @@ namespace Horizon.Database.Controllers
         public async Task<dynamic> postAccountStatusUpdates([FromBody] AccountStatusDTO StatusData)
         {
             AccountStatus existingData = db.AccountStatus.Where(acs => acs.AccountId == StatusData.AccountId).FirstOrDefault();
-            if(existingData != null)
+            if (existingData != null)
             {
                 existingData.LoggedIn = StatusData.LoggedIn;
                 existingData.GameId = StatusData.GameId;
                 existingData.ChannelId = StatusData.ChannelId;
                 existingData.WorldId = StatusData.WorldId;
                 existingData.GameName = StatusData.GameName;
+                existingData.AppId = StatusData.AppId;
+                existingData.DatabaseUser = HttpContext.GetUsernameOrDefault();
                 db.AccountStatus.Attach(existingData);
                 db.Entry(existingData).State = EntityState.Modified;
             }
@@ -399,12 +405,14 @@ namespace Horizon.Database.Controllers
                 .Where(acs => acs.LoggedIn)
                 .Select(s => new
                 {
+                    s.AppId,
                     s.AccountId,
                     db.Account.FirstOrDefault(a => a.AccountId == s.AccountId).AccountName,
                     s.WorldId,
                     s.GameId,
                     s.GameName,
-                    s.ChannelId
+                    s.ChannelId,
+                    s.DatabaseUser
                 });
 
             return results;

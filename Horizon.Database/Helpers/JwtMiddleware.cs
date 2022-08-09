@@ -8,6 +8,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using Horizon.Database.Services;
+using Horizon.Database.DTO;
 
 namespace Horizon.Database.Helpers
 {
@@ -59,6 +60,17 @@ namespace Horizon.Database.Helpers
                 // do nothing if jwt validation fails
                 // user is not attached to context so request won't have access to secure routes
             }
+        }
+    }
+
+    public static class JwtHelpers
+    {
+        public static string GetUsernameOrDefault(this HttpContext context)
+        {
+            if (context.Items.TryGetValue("User", out var obj) && obj is UserDTO user)
+                return user.AccountName;
+
+            return null;
         }
     }
 }
