@@ -831,3 +831,21 @@ BEGIN
 	WHERE CCS.stat_value IS NULL
 END
 GO
+
+/****** INITIALIZE DATABASE TABLES ******/
+DECLARE @i AS INT = 1
+
+/* accounts stats need exactly 100 rows with stat_id in range [1,100] */
+WHILE(@i <= 100)
+BEGIN
+    INSERT INTO [KEYS].[dim_stats] VALUES('STAT', 0)
+    SET @i += 1
+END
+
+/* clan stats need exactly 100 rows with stat_id in range [1,100] */
+SET @i = 1
+WHILE(@i <= 100)
+BEGIN
+    INSERT INTO [KEYS].[dim_clan_stats] VALUES('STAT', 0)
+    SET @i += 1
+END
