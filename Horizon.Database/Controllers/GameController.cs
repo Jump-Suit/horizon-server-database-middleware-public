@@ -271,7 +271,8 @@ namespace Horizon.Database.Controllers
         [HttpDelete, Route("clear")]
         public async Task<dynamic> clearGames()
         {
-            var games = db.Game.ToList();
+            var user = HttpContext.GetUsernameOrDefault();
+            var games = db.Game.Where(x => x.DatabaseUser == user).ToList();
             db.Game.RemoveRange(games);
             db.SaveChanges();
 
