@@ -89,6 +89,10 @@ namespace Horizon.Database.Entities
                     .HasColumnName("medius_stats")
                     .HasMaxLength(350);
 
+                entity.Property(e => e.ResetPasswordOnNextLogin)
+                    .HasColumnName("reset_pw_on_next_login")
+                    .HasDefaultValueSql("((0))");
+
                 entity.Property(e => e.Metadata).HasColumnName("metadata");
 
                 entity.Property(e => e.ModifiedDt).HasColumnName("modified_dt");

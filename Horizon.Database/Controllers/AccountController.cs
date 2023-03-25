@@ -94,6 +94,7 @@ namespace Horizon.Database.Controllers
                                        MachineId = existingAccount.MachineId,
                                        IsBanned = existingBan != null ? true : false,
                                        AppId = existingAccount.AppId,
+                                       ResetPasswordOnNextLogin = a.ResetPasswordOnNextLogin
                                    }).FirstOrDefault();
             List<int> friendIds = db.AccountFriend.Where(a => a.AccountId == AccountId).Select(a => a.FriendAccountId).ToList();
             List<int> ignoredIds = db.AccountIgnored.Where(a => a.AccountId == AccountId).Select(a => a.IgnoredAccountId).ToList();
@@ -199,6 +200,7 @@ namespace Horizon.Database.Controllers
                     existingAccount.AppId = request.AppId;
                     existingAccount.MachineId = request.MachineId;
                     existingAccount.LastSignInDt = now;
+                    existingAccount.ResetPasswordOnNextLogin = false;
                     db.Account.Attach(existingAccount);
                     db.Entry(existingAccount).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
 
@@ -210,6 +212,15 @@ namespace Horizon.Database.Controllers
                                                       StatValue = ds.DefaultValue
                                                   }).ToList();
                     db.AccountStat.AddRange(newStats);
+
+                    List<AccountCustomStat> newCustomStats = (from ds in db.DimCustomStats
+                                                              select new AccountCustomStat()
+                                                              {
+                                                                  AccountId = existingAccount.AccountId,
+                                                                  StatId = ds.StatId,
+                                                                  StatValue = ds.DefaultValue
+                                                              }).ToList();
+                    db.AccountCustomStat.AddRange(newCustomStats);
 
                     db.SaveChanges();
                     return await getAccount(existingAccount.AccountId);
@@ -241,6 +252,9 @@ namespace Horizon.Database.Controllers
 
             List<AccountStat> existingStats = db.AccountStat.Where(s => s.AccountId == existingAccount.AccountId).ToList();
             db.RemoveRange(existingStats);
+
+            List<AccountCustomStat> existingCustomStats = db.AccountCustomStat.Where(s => s.AccountId == existingAccount.AccountId).ToList();
+            db.RemoveRange(existingCustomStats);
 
             List<AccountFriend> existingFriends = db.AccountFriend.Where(s => s.AccountId == existingAccount.AccountId).ToList();
             db.RemoveRange(existingFriends);
@@ -426,12 +440,13 @@ namespace Horizon.Database.Controllers
             if (existingAccount == null)
                 return NotFound();
 
-            if (Crypto.ComputeSHA256(PasswordRequest.OldPassword) != existingAccount.AccountPassword)
+            if (!existingAccount.ResetPasswordOnNextLogin && Crypto.ComputeSHA256(PasswordRequest.OldPassword) != existingAccount.AccountPassword)
                 return StatusCode(401, "The password you provided is incorrect.");
 
             if (PasswordRequest.NewPassword != PasswordRequest.ConfirmNewPassword)
                 return StatusCode(400, "The new and confirmation passwords do not match each other. Please try again.");
 
+            existingAccount.ResetPasswordOnNextLogin = false;
             existingAccount.AccountPassword = Crypto.ComputeSHA256(PasswordRequest.NewPassword);
             existingAccount.ModifiedDt = DateTime.UtcNow;
 

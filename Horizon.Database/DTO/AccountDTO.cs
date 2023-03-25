@@ -21,6 +21,7 @@ namespace Horizon.Database.DTO
         public int? AppId { get; set; }
         public int? ClanId { get; set; }
         public string Metadata { get; set; }
+        public bool ResetPasswordOnNextLogin { get; set; }
     }
 
     public class AccountRequestDTO
