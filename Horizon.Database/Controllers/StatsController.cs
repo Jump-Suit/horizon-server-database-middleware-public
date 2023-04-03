@@ -66,6 +66,42 @@ namespace Horizon.Database.Controllers
             return Ok("Stats Validated");
         }
 
+        [Authorize("database")]
+        [HttpGet, Route("getStats")]
+        public async Task<dynamic> getStats(int AccountId)
+        {
+            DateTime modifiedDt = DateTime.UtcNow;
+            List<AccountStat> playerStats = db.AccountStat.Where(s => s.AccountId == AccountId).OrderBy(s => s.StatId).Select(s => s).ToList();
+
+            int badStats = playerStats.Where(s => s.StatValue < 0).Count();
+            if (badStats > 0)
+                return BadRequest("Found a negative stat in array. Can't have those!");
+
+            return new StatPostDTO()
+            {
+                AccountId = AccountId,
+                stats = playerStats.Select(x => x.StatValue).ToList()
+            };
+        }
+
+        [Authorize("database")]
+        [HttpGet, Route("getClanStats")]
+        public async Task<dynamic> getClanStats(int ClanId)
+        {
+            DateTime modifiedDt = DateTime.UtcNow;
+            List<ClanStat> clanStats = db.ClanStat.Where(s => s.ClanId == ClanId).OrderBy(s => s.StatId).Select(s => s).ToList();
+
+            int badStats = clanStats.Where(s => s.StatValue < 0).Count();
+            if (badStats > 0)
+                return BadRequest("Found a negative stat in array. Can't have those!");
+
+            return new ClanStatPostDTO()
+            {
+                ClanId = ClanId,
+                stats = clanStats.Select(x => x.StatValue).ToList()
+            };
+        }
+
         [Authorize]
         [HttpGet, Route("getPlayerLeaderboardIndex")]
         public async Task<dynamic> getPlayerLeaderboardIndex(int AccountId, int StatId, int AppId)
