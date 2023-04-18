@@ -152,7 +152,9 @@ namespace Horizon.Database.Controllers
                         MachineId = request.MachineId,
                         MediusStats = request.MediusStats,
                         AppId = request.AppId,
+                        ResetPasswordOnNextLogin = request.ResetPasswordOnNextLogin,
                     };
+
 
                     db.Account.Add(acc);
                     db.SaveChanges();
