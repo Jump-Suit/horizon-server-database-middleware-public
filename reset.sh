@@ -1,5 +1,6 @@
 #!/bin/bash
-set -e
 
 docker container kill horizon-middleware
+set -e
+
 bash run.sh
