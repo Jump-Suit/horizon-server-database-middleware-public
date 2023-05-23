@@ -1,9 +1,6 @@
 ﻿using Horizon.Database.DTO;
 using Horizon.Database.Entities;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Horizon.Database.Services
 {
@@ -16,6 +13,20 @@ namespace Horizon.Database.Services
             {
                 Id = message.Id,
                 Message = message.Message,
+            };
+        }
+
+        public ClanTeamChallengeDTO toClanTeamChallengeDTO(ClanTeamChallenge teamChallenge)
+        {
+            return new ClanTeamChallengeDTO()
+            {
+                ChallengerClanID = teamChallenge.ChallengerClanID,
+                AgainstClanID = teamChallenge.AgainstClanID,
+                Status = teamChallenge.Status,
+                ResponseTime = 0,
+                ChallengeMsg = teamChallenge.ChallengeMsg,
+                ResponseMessage = teamChallenge.ResponseMessage,
+                ClanChallengeId = teamChallenge.ClanChallengeId,
             };
         }
 

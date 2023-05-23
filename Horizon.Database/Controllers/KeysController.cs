@@ -110,11 +110,22 @@ namespace Horizon.Database.Controllers
 
         [Authorize("database")]
         [HttpGet, Route("getEULA")]
-        public async Task<dynamic> getEULA(int? eulaId, DateTime? fromDt, DateTime? toDt)
+        public async Task<dynamic> getEULA(int policyType, int appId, int? eulaId, DateTime? fromDt, DateTime? toDt)
         {
             dynamic eula = null;
             DateTime now = DateTime.UtcNow;
-            if (eulaId != null)
+
+            if(policyType == 0)
+            {
+                eula = db.DimEula.Where(x => x.AppId == appId 
+                && x.PolicyType == 0)
+                    .FirstOrDefault();
+            } else if (policyType == 1)
+            {
+                eula = db.DimEula.Where(x => x.AppId == appId
+                && x.PolicyType == 1)
+                    .FirstOrDefault();
+            } else if (eulaId != null)
             {
                 eula = (from e in db.DimEula
                         where e.Id == eulaId
@@ -123,12 +134,14 @@ namespace Horizon.Database.Controllers
             {
                 eula = (from e in db.DimEula
                         where e.FromDt <= fromDt
+                        && e.AppId == appId
                         && (e.ToDt == null || e.ToDt >= toDt)
                         select e).FirstOrDefault();
             } else if(fromDt != null && toDt == null)
             {
                 eula = (from e in db.DimEula
                         where e.FromDt <= fromDt
+                        && e.AppId == appId
                         && (e.ToDt == null || e.ToDt >= now)
                         select e).FirstOrDefault();
             } else
@@ -166,13 +179,14 @@ namespace Horizon.Database.Controllers
             }
 
             db.DimEula.Attach(eula);
-            db.Entry(eula).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
+            db.Entry(eula).State = EntityState.Modified;
 
             eula.EulaTitle = request.EulaTitle ?? eula.EulaTitle;
             eula.EulaBody = request.EulaBody ?? eula.EulaBody;
             eula.ModifiedDt = DateTime.UtcNow;
             eula.FromDt = request.FromDt ?? eula.FromDt;
             eula.ToDt = request.ToDt ?? eula.ToDt;
+            eula.AppId = request.AppId;
 
             db.SaveChanges();
 
@@ -190,6 +204,7 @@ namespace Horizon.Database.Controllers
                 FromDt = request.FromDt ?? DateTime.UtcNow,
                 ToDt = request.ToDt,
                 CreateDt = DateTime.UtcNow,
+                AppId = request.AppId,
             };
 
             db.DimEula.Add(eula);

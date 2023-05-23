@@ -138,7 +138,7 @@ namespace Horizon.Database.Controllers
         public async Task<dynamic> createAccount([FromBody] AccountRequestDTO request)
         {
             DateTime now = DateTime.UtcNow;
-            Account existingAccount = db.Account.Where(a => a.AccountName == request.AccountName).FirstOrDefault();
+            Account existingAccount = db.Account.Where(a => a.AccountName == request.AccountName && a.AppId == request.AppId).FirstOrDefault();
             if (existingAccount == null || existingAccount.IsActive == false)
             {
                 if (existingAccount == null)
@@ -152,9 +152,7 @@ namespace Horizon.Database.Controllers
                         MachineId = request.MachineId,
                         MediusStats = request.MediusStats,
                         AppId = request.AppId,
-                        ResetPasswordOnNextLogin = request.ResetPasswordOnNextLogin,
                     };
-
 
                     db.Account.Add(acc);
                     db.SaveChanges();
@@ -204,7 +202,7 @@ namespace Horizon.Database.Controllers
                     existingAccount.LastSignInDt = now;
                     existingAccount.ResetPasswordOnNextLogin = false;
                     db.Account.Attach(existingAccount);
-                    db.Entry(existingAccount).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
+                    db.Entry(existingAccount).State = EntityState.Modified;
 
                     List<AccountStat> newStats = (from ds in db.DimStats
                                                   select new AccountStat()
@@ -214,7 +212,7 @@ namespace Horizon.Database.Controllers
                                                       StatValue = ds.DefaultValue
                                                   }).ToList();
                     db.AccountStat.AddRange(newStats);
-
+                    
                     List<AccountCustomStat> newCustomStats = (from ds in db.DimCustomStats
                                                               select new AccountCustomStat()
                                                               {
@@ -223,7 +221,7 @@ namespace Horizon.Database.Controllers
                                                                   StatValue = ds.DefaultValue
                                                               }).ToList();
                     db.AccountCustomStat.AddRange(newCustomStats);
-
+                    
                     db.SaveChanges();
                     return await getAccount(existingAccount.AccountId);
                 }
@@ -248,7 +246,7 @@ namespace Horizon.Database.Controllers
             existingAccount.IsActive = false;
             existingAccount.ModifiedDt = now;
             db.Account.Attach(existingAccount);
-            db.Entry(existingAccount).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
+            db.Entry(existingAccount).State = EntityState.Modified;
 
             AccountDTO otherData = await getAccount(existingAccount.AccountId);
 
@@ -266,6 +264,73 @@ namespace Horizon.Database.Controllers
 
             db.SaveChanges();
             return Ok("Account Deleted");
+        }
+
+        [Authorize("database")]
+        [HttpPost, Route("postNpId")]
+        public async Task<dynamic> createNpIdAccount([FromBody] NpIdDTO request)
+        {
+             
+            DateTime now = DateTime.UtcNow;
+            NpId existingNpIdAccount = db.NpIds.Where(a => a.data == request.data
+                && a.AppId == request.AppId).FirstOrDefault();
+            if (existingNpIdAccount == null)
+            {
+                NpId acc = new NpId()
+                {
+                    AppId = request.AppId,
+                    data = request.data,
+                    term = request.term,
+                    dummy = request.dummy,
+
+                    opt = request.opt,
+                    reserved = request.reserved,
+                    CreateDt = now,
+                };
+
+                db.NpIds.Add(acc);
+                db.SaveChanges();
+
+                return acc;
+            }
+            else
+            {
+                existingNpIdAccount.AppId = request.AppId;
+                existingNpIdAccount.data = request.data;
+                existingNpIdAccount.term = request.term;
+                existingNpIdAccount.dummy = request.dummy;
+
+                existingNpIdAccount.opt = request.opt;
+                existingNpIdAccount.reserved = request.reserved;
+                existingNpIdAccount.ModifiedDt = now;
+
+                db.NpIds.Attach(existingNpIdAccount);
+                db.Entry(existingNpIdAccount).State = EntityState.Modified;
+                db.SaveChanges();
+
+                return existingNpIdAccount;
+            }
+        }
+
+        [Authorize("database")]
+        [HttpGet, Route("searchNpIdByAccountName")]
+        public async Task<dynamic> searchNpIdByAccountName(int appId, byte[] data)
+        {
+            DateTime now = DateTime.UtcNow;
+            NpId existingNpIdAccount = db.NpIds.Where(a => a.data == data && a.AppId == appId).FirstOrDefault();
+            if (existingNpIdAccount == null)
+            {
+                return StatusCode(403, $"NpId account name {data} not found");
+            }
+            else
+            {
+                db.NpIds.Attach(existingNpIdAccount);
+
+                db.NpIds.Find(existingNpIdAccount);
+                db.Entry(existingNpIdAccount).State = EntityState.Unchanged;
+
+                return existingNpIdAccount;
+            }
         }
 
         [Authorize]
@@ -297,7 +362,7 @@ namespace Horizon.Database.Controllers
 
             existingAccount.MachineId = MachineId;
             db.Account.Attach(existingAccount);
-            db.Entry(existingAccount).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
+            db.Entry(existingAccount).State = EntityState.Modified;
             db.SaveChanges();
             return Ok();
         }
@@ -312,7 +377,7 @@ namespace Horizon.Database.Controllers
 
             existingAccount.MediusStats = StatsString;
             db.Account.Attach(existingAccount);
-            db.Entry(existingAccount).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
+            db.Entry(existingAccount).State = EntityState.Modified;
             db.SaveChanges();
             return Ok();
         }
@@ -327,7 +392,7 @@ namespace Horizon.Database.Controllers
 
             existingAccount.LastSignInDt = SignInDt;
             db.Account.Attach(existingAccount);
-            db.Entry(existingAccount).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
+            db.Entry(existingAccount).State = EntityState.Modified;
             db.SaveChanges();
 
             return Ok();
@@ -342,7 +407,7 @@ namespace Horizon.Database.Controllers
 
             existingAccount.LastSignInIp = IpAddress;
             db.Account.Attach(existingAccount);
-            db.Entry(existingAccount).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
+            db.Entry(existingAccount).State = EntityState.Modified;
             db.SaveChanges();
             return Ok();
         }
@@ -357,7 +422,7 @@ namespace Horizon.Database.Controllers
 
             existingAccount.Metadata = Metadata;
             db.Account.Attach(existingAccount);
-            db.Entry(existingAccount).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
+            db.Entry(existingAccount).State = EntityState.Modified;
             db.SaveChanges();
             return Ok();
         }

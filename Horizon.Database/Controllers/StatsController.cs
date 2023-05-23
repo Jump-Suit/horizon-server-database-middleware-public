@@ -177,11 +177,11 @@ namespace Horizon.Database.Controllers
                                     where (a.GroupId == app_id_group && a.GroupId != null) || a.AppId == AppId
                                     select a.AppId).ToList();
 
-            List<ClanStat> stats = db.ClanStat.Where(s => s.Clan.IsActive == true && s.StatId == StatId && app_ids_in_group.Contains(s.Clan.AppId ?? -1)).OrderByDescending(s => s.StatValue).ThenBy(s => s.ClanId).ToList();
+            List<ClanStat> stats = db.ClanStat.Where(s => s.Clan.IsActive == true && s.StatId == StatId && app_ids_in_group.Contains(s.Clan.AppId)).OrderByDescending(s => s.StatValue).ThenBy(s => s.ClanId).ToList();
             ClanStat statForClan = stats.Where(s => s.ClanId == ClanId).FirstOrDefault();
             Clan clan = db.Clan.Where(a => a.ClanId == ClanId).FirstOrDefault();
             ClanController cc = new ClanController(db, authService);
-            int totalClans = await cc.getActiveClanCountByAppId((int)clan.AppId);
+            int totalClans = await cc.getActiveClanCountByAppId(clan.AppId);
             if (clan.IsActive == true)
             {
                 return new ClanLeaderboardDTO()
@@ -210,11 +210,11 @@ namespace Horizon.Database.Controllers
                                     where (a.GroupId == app_id_group && a.GroupId != null) || a.AppId == AppId
                                     select a.AppId).ToList();
 
-            List<ClanCustomStat> stats = db.ClanCustomStat.Where(s => s.Clan.IsActive == true && s.StatId == CustomStatId && app_ids_in_group.Contains(s.Clan.AppId ?? -1)).OrderByDescending(s => s.StatValue).ThenBy(s => s.ClanId).ToList();
+            List<ClanCustomStat> stats = db.ClanCustomStat.Where(s => s.Clan.IsActive == true && s.StatId == CustomStatId && app_ids_in_group.Contains(s.Clan.AppId)).OrderByDescending(s => s.StatValue).ThenBy(s => s.ClanId).ToList();
             ClanCustomStat statForClan = stats.Where(s => s.ClanId == ClanId).FirstOrDefault();
             Clan clan = db.Clan.Where(a => a.ClanId == ClanId).FirstOrDefault();
             ClanController cc = new ClanController(db, authService);
-            int totalClans = await cc.getActiveClanCountByAppId((int)clan.AppId);
+            int totalClans = await cc.getActiveClanCountByAppId(clan.AppId);
             if (clan.IsActive == true)
             {
                 return new ClanLeaderboardDTO()

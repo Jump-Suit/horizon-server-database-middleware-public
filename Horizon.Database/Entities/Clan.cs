@@ -17,7 +17,7 @@ namespace Horizon.Database.Entities
         public int ClanId { get; set; }
         public string ClanName { get; set; }
         public int ClanLeaderAccountId { get; set; }
-        public int? AppId { get; set; }
+        public int AppId { get; set; }
         public bool? IsActive { get; set; }
         public string MediusStats { get; set; }
         public DateTime CreateDt { get; set; }

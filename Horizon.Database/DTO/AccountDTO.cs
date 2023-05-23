@@ -35,6 +35,33 @@ namespace Horizon.Database.DTO
         public bool ResetPasswordOnNextLogin { get; set; } = false;
     }
 
+    public class AccountRelationInviteDTO
+    {
+        /// <summary>
+        /// Unique id of account.
+        /// </summary>
+        public int AccountId { get; set; }
+        /// <summary>
+        /// Unique Name of account
+        /// </summary>
+        public string AccountName { get; set; }
+
+        /// <summary>
+        /// Unique id of buddy account.
+        /// </summary>
+        public int BuddyAccountId { get; set; }
+
+        /// <summary>
+        /// App id of the account.
+        /// </summary>
+        public int AppId { get; set; }
+
+        /// <summary>
+        /// AddType for this Buddy Invitation
+        /// </summary>
+        public int BuddyAddType { get; set; }
+    }
+
     public class AccountRelationDTO
     {
         public int AccountId { get; set; }
@@ -90,4 +117,28 @@ namespace Horizon.Database.DTO
         public string IpAddress { get; set; }
         public DateTime ToDt { get; set; }
     }
+
+
+    #region MediusBuddyAddType
+    /// <summary>
+    /// Introduced in Medius Library version (v1.50)
+    /// There is a new enumeration type called MediusBuddyAddType.  When set to 
+    /// AddSymmetric, then when a player accepts your buddy invitation, you will
+    /// automatically be updated in their buddy list as well.Default behaviour of
+    /// Medius is to require both users to invite each other, AddSymmetric requires
+    /// only one user to invite.
+    /// </summary>
+    public enum MediusBuddyAddType : int
+    {
+        /// <summary>
+        /// Add User to your Buddy List,
+        /// but without the requirement that the buddy see you on their list
+        /// </summary>
+        AddSingle,
+        /// <summary>
+        /// Request that each person appears on the other's buddy list.
+        /// </summary>
+        AddSymmetric
+    }
+    #endregion
 }

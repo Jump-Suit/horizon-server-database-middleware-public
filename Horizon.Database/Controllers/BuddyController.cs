@@ -4,8 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Horizon.Database.DTO;
 using Horizon.Database.Entities;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Horizon.Database.Controllers
 {
@@ -17,6 +17,74 @@ namespace Horizon.Database.Controllers
         public BuddyController(Ratchet_DeadlockedContext _db)
         {
             db = _db;
+        }
+
+        [Authorize("database")]
+        [HttpPost, Route("addBuddyInvitation")]
+        public async Task<dynamic> addBuddyInvitation([FromBody] AccountRelationInviteDTO buddyReq)
+        {
+
+
+            AccountFriendInvitations existingFriendInvite = db.AccountFriendInvitations.Where(af => af.AccountId == buddyReq.AccountId && af.FriendAccountId == buddyReq.BuddyAccountId && af.AppId == buddyReq.AppId).FirstOrDefault();
+            AccountIgnored existingIgnored = db.AccountIgnored.Where(af => af.AccountId == buddyReq.AccountId && af.IgnoredAccountId == buddyReq.BuddyAccountId).FirstOrDefault();
+
+            if (existingFriendInvite != null)
+                return StatusCode(403, "Buddy Invite already exists.");
+
+            if (existingIgnored != null)
+            {
+                db.AccountIgnored.Attach(existingIgnored);
+                db.Entry(existingIgnored).State = EntityState.Deleted;
+            }
+
+            AccountFriendInvitations newFriend = new AccountFriendInvitations()
+            {
+                AccountId = buddyReq.AccountId,
+                AccountName = buddyReq.AccountName,
+                FriendAccountId = buddyReq.BuddyAccountId,
+                AppId = buddyReq.AppId,
+                MediusBuddyAddType = buddyReq.BuddyAddType,
+                CreateDt = DateTime.UtcNow
+            };
+            db.AccountFriendInvitations.Add(newFriend);
+            db.SaveChanges();
+
+            return Ok("Buddy Invite Added");
+        }
+
+        [Authorize("database")]
+        [HttpPost, Route("deleteBuddyInvitation")]
+        public async Task<dynamic> deleteBuddyInvitation([FromBody] AccountFriendInvitations accountFriendInvitation)
+        {
+            AccountFriendInvitations existingFriendPending = db.AccountFriendInvitations.Where(afi => afi.AccountId != accountFriendInvitation.AccountId
+                && afi.AppId == accountFriendInvitation.AppId
+                && afi.FriendAccountId == accountFriendInvitation.AccountId)
+                .FirstOrDefault();
+
+            if (existingFriendPending == null)
+                return StatusCode(403, "Buddy doesn't exist in invitation list.");
+
+            db.AccountFriendInvitations.Remove(existingFriendPending);
+            db.SaveChanges();
+
+            return Ok("Buddy Invitation deleted!");
+        }
+
+        [Authorize("database")] 
+        [HttpGet, Route("retrieveBuddyInvitations")]
+        public async Task<dynamic> retrieveBuddyInvitations(int appId, int accountId)
+        {
+            List<AccountFriendInvitations> FriendPending = db.AccountFriendInvitations.Where(af => af.AccountId != accountId 
+                && af.FriendAccountId == accountId
+                && af.AppId == appId).ToList();
+            
+            if (FriendPending != null)
+            {
+                return FriendPending;
+            } else {
+                return null;
+            }
+
         }
 
         [Authorize("database")]
@@ -32,7 +100,7 @@ namespace Horizon.Database.Controllers
             if (existingIgnored != null)
             {
                 db.AccountIgnored.Attach(existingIgnored);
-                db.Entry(existingIgnored).State = Microsoft.EntityFrameworkCore.EntityState.Deleted;
+                db.Entry(existingIgnored).State = EntityState.Deleted;
             }
 
             AccountFriend newFriend = new AccountFriend()
@@ -57,7 +125,7 @@ namespace Horizon.Database.Controllers
                 return StatusCode(403, "Cannot remove a buddy that isn't a buddy.");
 
             db.AccountFriend.Attach(existingFriend);
-            db.Entry(existingFriend).State = Microsoft.EntityFrameworkCore.EntityState.Deleted;
+            db.Entry(existingFriend).State = EntityState.Deleted;
             db.SaveChanges();
 
             return Ok("Buddy Removed");
@@ -76,7 +144,7 @@ namespace Horizon.Database.Controllers
             if(existingFriend != null)
             {
                 db.AccountFriend.Attach(existingFriend);
-                db.Entry(existingFriend).State = Microsoft.EntityFrameworkCore.EntityState.Deleted;
+                db.Entry(existingFriend).State = EntityState.Deleted;
             }
 
             AccountIgnored newIgnore = new AccountIgnored()
@@ -101,7 +169,7 @@ namespace Horizon.Database.Controllers
                 return StatusCode(403, "Cannot unignore a player that isn't ignored.");
 
             db.AccountIgnored.Attach(existingIgnored);
-            db.Entry(existingIgnored).State = Microsoft.EntityFrameworkCore.EntityState.Deleted;
+            db.Entry(existingIgnored).State = EntityState.Deleted;
             db.SaveChanges();
 
             return Ok("Player Unignored");

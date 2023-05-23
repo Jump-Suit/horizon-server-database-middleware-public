@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Horizon.Database.DTO;
+using Microsoft.EntityFrameworkCore;
 
 namespace Horizon.Database.Entities
 {
@@ -11,10 +12,12 @@ namespace Horizon.Database.Entities
         public Ratchet_DeadlockedContext(DbContextOptions<Ratchet_DeadlockedContext> options)
             : base(options)
         {
+            
         }
 
         public virtual DbSet<Account> Account { get; set; }
         public virtual DbSet<AccountFriend> AccountFriend { get; set; }
+        public virtual DbSet<AccountFriendInvitations> AccountFriendInvitations { get; set; }
         public virtual DbSet<AccountIgnored> AccountIgnored { get; set; }
         public virtual DbSet<AccountStat> AccountStat { get; set; }
         public virtual DbSet<AccountCustomStat> AccountCustomStat { get; set; }
@@ -27,7 +30,9 @@ namespace Horizon.Database.Entities
         public virtual DbSet<ClanMember> ClanMember { get; set; }
         public virtual DbSet<ClanMessage> ClanMessage { get; set; }
         public virtual DbSet<ClanStat> ClanStat { get; set; }
+        public virtual DbSet<ClanTeamChallenge> ClanTeamChallenge { get; set; }
         public virtual DbSet<ClanCustomStat> ClanCustomStat { get; set; }
+        public virtual DbSet<PostDebugInfo> DebugInfo { get; set; }
         public virtual DbSet<DimAnnouncements> DimAnnouncements { get; set; }
         public virtual DbSet<DimAppGroups> DimAppGroups { get; set; }
         public virtual DbSet<DimAppIds> DimAppIds { get; set; }
@@ -36,10 +41,14 @@ namespace Horizon.Database.Entities
         public virtual DbSet<DimClanStats> DimClanStats { get; set; }
         public virtual DbSet<DimCustomStats> DimCustomStats { get; set; }
         public virtual DbSet<DimClanCustomStats> DimClanCustomStats { get; set; }
+        public virtual DbSet<Files> Files { get; set; }
+        public virtual DbSet<FileAttributes> FileAttributes { get; set; }
+        public virtual DbSet<FileMetaData> FileMetaDatas { get; set; }
         public virtual DbSet<Game> Game { get; set; }
         public virtual DbSet<GameHistory> GameHistory { get; set; }
         public virtual DbSet<Channels> Channels { get; set; }
         public virtual DbSet<Locations> Locations { get; set; }
+        public virtual DbSet<NpId> NpIds { get; set; }
         public virtual DbSet<Roles> Roles { get; set; }
         public virtual DbSet<ServerFlags> ServerFlags { get; set; }
         public virtual DbSet<ServerLog> ServerLog { get; set; }
@@ -96,6 +105,32 @@ namespace Horizon.Database.Entities
                 entity.Property(e => e.Metadata).HasColumnName("metadata");
 
                 entity.Property(e => e.ModifiedDt).HasColumnName("modified_dt");
+            });
+
+            modelBuilder.Entity<AccountFriendInvitations>(entity =>
+            {
+                entity.ToTable("account_friend_invitations", "ACCOUNTS");
+
+                entity.Property(e => e.Id).HasColumnName("id");
+
+                entity.Property(e => e.AppId).HasColumnName("app_id");
+
+                entity.Property(e => e.AccountId).HasColumnName("account_id")
+                    .IsRequired();
+
+                entity.Property(e => e.AccountName)
+                    .IsRequired()
+                    .HasColumnName("account_name")
+                    .HasMaxLength(32);
+
+                entity.Property(e => e.FriendAccountId).HasColumnName("friend_account_id");
+
+                entity.Property(e => e.MediusBuddyAddType).HasColumnName("buddy_add_type");
+
+                entity.Property(e => e.CreateDt)
+                    .HasColumnName("create_dt")
+                    .HasDefaultValueSql("(getutcdate())");
+
             });
 
             modelBuilder.Entity<AccountFriend>(entity =>
@@ -430,6 +465,40 @@ namespace Horizon.Database.Entities
                     .HasConstraintName("FK_clan_message_clan");
             });
 
+            modelBuilder.Entity<ClanTeamChallenge>(entity =>
+            {
+                entity.ToTable("clan_team_challenge", "CLANS");
+
+                entity.Property(e => e.ClanChallengeId)
+                    .HasColumnName("clan_challenge_id");
+
+                entity.HasKey(e => e.ClanChallengeId);
+
+                entity.Property(e => e.AppId).HasColumnName("app_id");
+
+                entity.Property(e => e.ChallengerClanID).HasColumnName("challenger_clan_id");
+
+                entity.Property(e => e.AgainstClanID).HasColumnName("against_clan_id");
+                
+                entity.Property(e => e.Status).HasColumnName("status")
+                    .HasColumnType("int");
+
+                entity.Property(e => e.ResponseTime).HasColumnName("response_time")
+                    .HasColumnType("int");
+
+                entity.Property(e => e.CreateDt)
+                    .HasColumnName("create_dt")
+                    .HasDefaultValueSql("(getutcdate())");
+
+                entity.Property(e => e.ChallengeMsg)
+                    .HasColumnName("challenge_msg")
+                    .HasMaxLength(200);
+
+                entity.Property(e => e.ResponseMessage)
+                    .HasColumnName("response_msg")
+                    .HasMaxLength(200);
+            });
+
             modelBuilder.Entity<ClanStat>(entity =>
             {
                 entity.ToTable("clan_stat", "STATS");
@@ -482,6 +551,21 @@ namespace Horizon.Database.Entities
                     .HasForeignKey(d => d.StatId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_clan_custom_stat_dim_stats");
+            });
+
+            modelBuilder.Entity<PostDebugInfo>(entity =>
+            {
+                entity.ToTable("client_debuginfo", "LOGS");
+
+                entity.Property(e => e.Id).HasColumnName("id");
+
+                entity.Property(e => e.Message).HasColumnName("message");
+
+                entity.Property(e => e.AppId).HasColumnName("app_id");
+
+                entity.Property(e => e.CreateDt)
+                    .HasColumnName("create_dt")
+                    .HasDefaultValueSql("(getutcdate())");
             });
 
             modelBuilder.Entity<DimAnnouncements>(entity =>
@@ -545,11 +629,102 @@ namespace Horizon.Database.Entities
                 entity.Property(e => e.GroupId).HasColumnName("group_id");
             });
 
+            modelBuilder.Entity<Files>(entity =>
+            {
+                entity.ToTable("files", "FILESERVICES");
+
+
+                entity.Property(e => e.Id).HasColumnName("id");
+
+                entity.Property(e => e.AppId).HasColumnName("app_id");
+
+                entity.Property(e => e.FileName)
+                    .IsRequired()
+                    .HasColumnName("FileName")
+                    .HasMaxLength(128);
+                entity.Property(e => e.ServerChecksum).HasColumnName("ServerChecksum")
+                    .HasMaxLength(48);
+
+                entity.Property(e => e.FileID).HasColumnName("FileID");
+                entity.Property(e => e.FileSize).HasColumnName("FileSize");
+                entity.Property(e => e.CreationTimeStamp).HasColumnName("CreationTimeStamp");
+                entity.Property(e => e.OwnerID).HasColumnName("OwnerID");
+                entity.Property(e => e.GroupID).HasColumnName("GroupID");
+                entity.Property(e => e.OwnerPermissionRWX).HasColumnName("OwnerPermissionRWX");
+                entity.Property(e => e.GroupPermissionRWX).HasColumnName("GroupPermissionRWX");
+                entity.Property(e => e.GlobalPermissionRWX).HasColumnName("GlobalPermissionRWX");
+                entity.Property(e => e.ServerOperationID).HasColumnName("ServerOperationID");
+
+                entity.Property(e => e.CreateDt)
+                    .HasColumnName("create_dt")
+                    .HasDefaultValueSql("(getutcdate())");
+
+                entity.Property(e => e.ModifiedDt).HasColumnName("modified_dt");
+            });
+
+            modelBuilder.Entity<FileAttributes>(entity =>
+            {
+                entity.ToTable("files_attributes", "FILESERVICES");
+
+                entity.Property(e => e.FileID).HasColumnName("id");
+
+                entity.Property(e => e.AppId).HasColumnName("app_id");
+
+                entity.Property(e => e.FileID).HasColumnName("FileID");
+
+                entity.Property(e => e.FileName)
+                    .IsRequired()
+                    .HasColumnName("FileName")
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.LastChangedTimeStamp).HasColumnName("LastChangedTimeStamp");
+                entity.Property(e => e.LastChangedByUserID).HasColumnName("LastChangedByUserID");
+                entity.Property(e => e.NumberAccesses).HasColumnName("NumberAccesses");
+                entity.Property(e => e.StreamableFlag).HasColumnName("StreamableFlag");
+                entity.Property(e => e.StreamingDataRate).HasColumnName("StreamingDataRate");
+
+                entity.Property(e => e.CreateDt)
+                    .HasColumnName("create_dt")
+                    .HasDefaultValueSql("(getutcdate())");
+                entity.Property(e => e.ModifiedDt).HasColumnName("modified_dt");
+            });
+
+            modelBuilder.Entity<FileMetaData>(entity =>
+            {
+                entity.ToTable("files_metadata", "FILESERVICES");
+
+                entity.Property(e => e.Id).HasColumnName("id");
+
+                entity.Property(e => e.AppId).HasColumnName("app_id");
+
+                entity.Property(e => e.FileID).IsRequired()
+                    .HasColumnName("FileID");
+
+                entity.Property(e => e.FileName)
+                    .IsRequired()
+                    .HasColumnName("FileName")
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.Key).HasColumnName("meta_key").HasMaxLength(56);
+                entity.Property(e => e.Value).HasColumnName("meta_value")
+                    .HasMaxLength(256);
+
+                entity.Property(e => e.CreateDt)
+                    .HasColumnName("create_dt")
+                    .HasDefaultValueSql("(getutcdate())");
+
+                entity.Property(e => e.ModifiedDt).HasColumnName("modified_dt");
+            });
+
             modelBuilder.Entity<DimEula>(entity =>
             {
                 entity.ToTable("dim_eula", "KEYS");
 
                 entity.Property(e => e.Id).HasColumnName("id");
+
+                entity.Property(e => e.PolicyType).HasColumnName("policy_type");
+
+                entity.Property(e => e.AppId).HasColumnName("app_id");
 
                 entity.Property(e => e.CreateDt)
                     .HasColumnName("create_dt")
@@ -836,6 +1011,38 @@ namespace Horizon.Database.Entities
                 entity.Property(e => e.GenericField3).HasColumnName("generic_field_3");
                 entity.Property(e => e.GenericField4).HasColumnName("generic_field_4");
                 entity.Property(e => e.GenericFieldFilter).HasColumnName("generic_field_filter");
+            });
+
+            modelBuilder.Entity<NpId>(entity =>
+            {
+                entity.HasKey(e => new { e.AppId });
+
+                entity.ToTable("account_npids", "ACCOUNTS");
+
+                entity.Property(e => e.AppId).HasColumnName("app_id");
+
+                entity.Property(e => e.data)
+                    .IsRequired()
+                    .HasColumnName("data")
+                    .HasMaxLength(16);
+                entity.Property(e => e.term).HasColumnName("term");
+                entity.Property(e => e.dummy)
+                    .HasMaxLength(3)
+                    .HasColumnName("dummy");
+
+                entity.Property(e => e.opt)
+                    .HasMaxLength(8)
+                    .HasColumnName("opt");
+                entity.Property(e => e.reserved)
+                    .HasMaxLength(8)
+                    .HasColumnName("reserved");
+
+                entity.Property(e => e.CreateDt)
+                    .HasColumnName("create_dt")
+                    .HasDefaultValueSql("(getutcdate())");
+
+                entity.Property(e => e.ModifiedDt)
+                    .HasColumnName("modified_dt");
             });
 
             modelBuilder.Entity<Roles>(entity =>

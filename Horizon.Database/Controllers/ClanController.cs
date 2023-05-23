@@ -9,6 +9,10 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Horizon.Database.Services;
+using System.Security.Claims;
+using System.Collections;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.Extensions.Logging;
 
 namespace Horizon.Database.Controllers
 {
@@ -37,7 +41,7 @@ namespace Horizon.Database.Controllers
                                     select a.AppId).ToList();
 
             int accountCount = (from c in db.Clan
-                                where app_ids_in_group.Contains(c.AppId ?? -1)
+                                where app_ids_in_group.Contains(c.AppId)
                                 && c.IsActive == true
                                 select c).Count();
             return accountCount;
@@ -67,7 +71,7 @@ namespace Horizon.Database.Controllers
 
             ClanDTO response = new ClanDTO()
             {
-                AppId = clan.AppId ?? 11184,
+                AppId = clan.AppId /*?? 11184*/,
                 ClanId = clan.ClanId,
                 ClanName = clan.ClanName,
                 ClanLeaderAccount = aServ.toAccountDTO(clan.ClanLeaderAccount),
@@ -83,6 +87,50 @@ namespace Horizon.Database.Controllers
         }
 
         [Authorize("database")]
+        [HttpGet, Route("getClans")]
+        public async Task<dynamic> getClans(int appId)
+        {
+            AccountService aServ = new AccountService();
+            ClanService cs = new ClanService();
+
+            List<ClanDTO> clanResponses = new List<ClanDTO>();
+
+            List<Clan> clanList = (from c in db.Clan
+                           .Include(c => c.ClanMember)
+                           .ThenInclude(cm => cm.Account)
+                           .Include(c => c.ClanMessage)
+                           .Include(c => c.ClanStat)
+                           .Include(c => c.ClanCustomStat)
+                           .Include(c => c.ClanLeaderAccount)
+                           .Include(c => c.ClanInvitation)
+                           .ThenInclude(ci => ci.Account)
+                         where c.AppId == appId && c.IsActive == true
+                         select c).ToList();
+
+            foreach (var clan in clanList)
+            {
+                clanResponses.Add(new ClanDTO
+                {
+                    AppId = clan.AppId,
+                    ClanId = clan.ClanId,
+                    ClanName = clan.ClanName,
+                    ClanLeaderAccount = aServ.toAccountDTO(clan.ClanLeaderAccount),
+                    ClanMemberAccounts = clan.ClanMember.Where(cm => cm.IsActive == true).Select(cm => aServ.toAccountDTO(cm.Account)).ToList(),
+                    ClanMediusStats = clan.MediusStats,
+                    ClanWideStats = clan.ClanStat.OrderBy(stat => stat.StatId).Select(cs => cs.StatValue).ToList(),
+                    ClanCustomWideStats = clan.ClanCustomStat.OrderBy(stat => stat.StatId).Select(cs => cs.StatValue).ToList(),
+                    ClanMessages = clan.ClanMessage.OrderByDescending(cm => cm.Id).Select(cm => cs.toClanMessageDTO(cm)).ToList(),
+                    ClanMemberInvitations = clan.ClanInvitation.Select(ci => cs.toClanInvitationDTO(ci)).ToList(),
+                });
+            }
+
+            if (clanResponses == null)
+                return NotFound();
+
+            return clanResponses;
+        }
+
+        [Authorize("database")]
         [HttpGet, Route("searchClanByName")]
         public async Task<dynamic> searchClanByName(string clanName, int appId)
         {
@@ -94,7 +142,7 @@ namespace Horizon.Database.Controllers
                                     where (a.GroupId == app_id_group && a.GroupId != null) || a.AppId == appId
                                     select a.AppId).ToList();
 
-            int clanId = db.Clan.Where(c => c.IsActive == true && app_ids_in_group.Contains(c.AppId ?? -1) && c.ClanName.ToLower() == clanName.ToLower()).Select(c => c.ClanId).FirstOrDefault();
+            int clanId = db.Clan.Where(c => c.IsActive == true && app_ids_in_group.Contains(c.AppId) && c.ClanName.ToLower() == clanName.ToLower()).Select(c => c.ClanId).FirstOrDefault();
 
             if (clanId != 0)
             {
@@ -115,7 +163,7 @@ namespace Horizon.Database.Controllers
                 return BadRequest();
 
             // verify clan name doesn't already exist
-            var existingClan = db.Clan.Where(c => c.IsActive == true && c.ClanName.ToLower() == clanName.ToLower())
+            var existingClan = db.Clan.Where(c => c.IsActive == true && c.ClanName.ToLower() == clanName.ToLower() && c.AppId == appId)
                 .FirstOrDefault();
             if (existingClan != null)
                 return BadRequest();
@@ -276,7 +324,7 @@ namespace Horizon.Database.Controllers
 
             existingClan.MediusStats = StatsString;
             db.Clan.Attach(existingClan);
-            db.Entry(existingClan).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
+            db.Entry(existingClan).State = EntityState.Modified;
             db.SaveChanges();
             return Ok();
         }
@@ -420,7 +468,138 @@ namespace Horizon.Database.Controllers
             target.Message = req.Message;
 
             db.ClanMessage.Attach(target);
-            db.Entry(target).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
+            db.Entry(target).State = EntityState.Modified;
+            db.SaveChanges();
+
+            return Ok();
+        }
+
+        [Authorize("database")]
+        [HttpPost, Route("deleteMessage")]
+        public async Task<dynamic> deleteClanMessage(int accountId, int clanId, [FromBody] ClanMessageDTO req)
+        {
+            var target = db.ClanMessage.Where(c => c.ClanId == clanId && c.Id == req.Id)
+                .FirstOrDefault();
+
+            if (target == null)
+                return NotFound();
+
+            db.ClanMessage.Remove(target);
+            db.Entry(target).State = EntityState.Deleted;
+            db.SaveChanges();
+
+            return Ok();
+        }
+
+        [Authorize("database")]
+        [HttpPost, Route("requestClanTeamChallenge")]
+        public async Task<dynamic> requestClanTeamChallenge(int challengerClanId, int againstClanId, int accountId, string message, int appId)
+        {
+            //ClanTeamChallenge clanTeamChallengeExists = db.ClanTeamChallenge.Where(a => a.ChallengerClanID == clanId).FirstOrDefault();
+
+            //Clan challengerClan = db.Clan.Where(c => c.ClanId == challengerClanId && c.ClanLeaderAccountId == accountId)
+            //                        .FirstOrDefault();
+
+            //var clanTeamChallenge = db.ClanTeamChallenge.Where(c => c.ChallengerClanID == challengerClanId && c.AppId == appId).FirstOrDefault();
+
+            ClanTeamChallenge newClanTeamChallenge = new ClanTeamChallenge()
+            {
+                AppId = appId,
+                ChallengerClanID = challengerClanId,
+                AgainstClanID = againstClanId,
+                Status = 0,
+                ResponseTime = 0,
+                ChallengeMsg = message,
+                ResponseMessage = null,
+            };
+
+            db.ClanTeamChallenge.Add(newClanTeamChallenge);
+            db.Entry(newClanTeamChallenge).State = EntityState.Added;
+            db.SaveChanges();
+
+            return Ok();
+        }
+
+        [Authorize("database")]
+        [HttpPost, Route("respondClanTeamChallenge")]
+        public async Task<dynamic> respondClanTeamChallenge(int ClanChallengeId, int clanChallengeStatus, int accountId, string message, int appId)
+        {
+            //ClanTeamChallenge clanTeamChallengeExists = db.ClanTeamChallenge.Where(a => a.ChallengerClanID == clanId).FirstOrDefault();
+
+            //Clan challengerClan = db.Clan.Where(c => c.ClanId == challengerClanId && c.ClanLeaderAccountId == accountId)
+            //                        .FirstOrDefault();
+
+            //var clanTeamChallenge = db.ClanTeamChallenge.Where(c => c.ChallengerClanID == challengerClanId && c.AppId == appId).FirstOrDefault();
+
+            var target = db.ClanTeamChallenge.Where(c => c.ClanChallengeId == ClanChallengeId && c.AppId == appId)
+                .FirstOrDefault();
+
+            if (target == null)
+                return NotFound();
+
+            target.ResponseMessage = message;
+            target.Status = clanChallengeStatus;
+
+            db.ClanTeamChallenge.Attach(target);
+            db.Entry(target).State = EntityState.Modified;
+            db.SaveChanges();
+
+            return Ok();
+        }
+
+        [Authorize("database")]
+        [HttpGet, Route("getClanTeamChallenges")]
+        public async Task<dynamic> getClanTeamChallenges(int clanId, int accountId, int clanChallengeStatus, int appId, int startIdx, int pageSize)
+        {
+            ClanService cs = new ClanService();
+
+            //Clan clanTeamChallengeExists = db.Clan.Where(c => c.ClanId == clanId && c.ClanLeaderAccountId == accountId && c.AppId == appId).FirstOrDefault();
+
+            //Console.WriteLine($"clanTeamChallenge exist?: {clanTeamChallengeExists.ClanName}");
+            /*
+            if (clanTeamChallengeExists == null)
+                return NotFound();
+            */
+
+            int totalClanTeamChallenges = db.ClanTeamChallenge.Where(cm => (cm.AgainstClanID == clanId || cm.ChallengerClanID == clanId) && cm.Status == clanChallengeStatus && cm.AppId == appId).Count();
+
+            int totalPages = (int)Math.Ceiling((decimal)totalClanTeamChallenges / pageSize);
+
+            if (startIdx < totalPages)
+            {
+                var skip = startIdx * pageSize;
+
+                var result = db.ClanTeamChallenge.Where(cm => (cm.AgainstClanID == clanId || cm.ChallengerClanID == clanId) && cm.Status == clanChallengeStatus && cm.AppId == appId)
+                                            .Skip(skip)
+                                            .Take(pageSize)
+                                            .Select(cm => cs.toClanTeamChallengeDTO(cm));
+
+                return result;
+            } else
+            {
+                return BadRequest($"Page index exceeds total of {totalPages}.");
+            }
+        }
+
+        [Authorize("database")]
+        [HttpPost, Route("revokeClanTeamChallenge")]
+        public async Task<dynamic> revokeClanTeamChallenge(int ClanChallengeId, int accountId, int appId)
+        {
+            //ClanTeamChallenge clanTeamChallengeExists = db.ClanTeamChallenge.Where(a => a.ChallengerClanID == clanId).FirstOrDefault();
+
+            //Clan challengerClan = db.Clan.Where(c => c.ClanId == challengerClanId && c.ClanLeaderAccountId == accountId)
+            //                        .FirstOrDefault();
+
+            //var clanTeamChallenge = db.ClanTeamChallenge.Where(c => c.ChallengerClanID == challengerClanId && c.AppId == appId).FirstOrDefault();
+
+            var target = db.ClanTeamChallenge.Where(c => c.ClanChallengeId == ClanChallengeId && c.AppId == appId)
+                .FirstOrDefault();
+
+            if (target == null)
+                return NotFound();
+
+            db.ClanTeamChallenge.Remove(target);
+            db.Entry(target).State = EntityState.Deleted;
             db.SaveChanges();
 
             return Ok();

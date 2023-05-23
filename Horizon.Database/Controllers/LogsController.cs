@@ -43,6 +43,23 @@ namespace Horizon.Database.Controllers
             return Ok("Log Saved!");
         }
 
+        [Authorize("database")]
+        [HttpPost, Route("postDebugInfo")]
+        public async Task<dynamic> postDebugInfo([FromBody] PostDebugInfo request)
+        {
+            var clientDebugInfo = new PostDebugInfo()
+            {
+                Message = request.Message,
+                AppId = request.AppId,
+                CreateDt = DateTime.UtcNow,
+            };
+
+            db.DebugInfo.Add(clientDebugInfo);
+            db.SaveChanges();
+
+            return Ok("postDebugInfo added!");
+        }
+
         [Route("error")]
         [ApiExplorerSettings(IgnoreApi = true)]
         public IActionResult error()
