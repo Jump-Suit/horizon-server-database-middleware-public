@@ -400,7 +400,14 @@ namespace Horizon.Database.Controllers
             foreach (ClanStat cStat in clanStats)
             {
 
-                int newValue = statData.stats[cStat.StatId - 1];
+                int newValue;
+                if (statData.Delta){
+                    newValue = cStat.StatValue + statData.stats[cStat.StatId - 1];
+                }
+                else{
+                    newValue = statData.stats[cStat.StatId - 1];
+                }   
+                
                 cStat.ModifiedDt = modifiedDt;
                 cStat.StatValue = newValue;
 

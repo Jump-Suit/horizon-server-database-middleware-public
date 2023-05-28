@@ -40,6 +40,7 @@ namespace Horizon.Database.DTO
     public class ClanStatPostDTO
     {
         public int ClanId { get; set; }
+        public bool Delta { get; set; }
         public List<int> stats { get; set; }
     }
 }
