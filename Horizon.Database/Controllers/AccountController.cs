@@ -206,6 +206,23 @@ namespace Horizon.Database.Controllers
                     db.Account.Attach(existingAccount);
                     db.Entry(existingAccount).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
 
+                    // delete stats
+                    List<AccountStat> existingStats = db.AccountStat.Where(s => s.AccountId == existingAccount.AccountId).ToList();
+                    db.RemoveRange(existingStats);
+
+                    // delete custom stats
+                    List<AccountCustomStat> existingCustomStats = db.AccountCustomStat.Where(s => s.AccountId == existingAccount.AccountId).ToList();
+                    db.RemoveRange(existingCustomStats);
+
+                    // delete friends
+                    List<AccountFriend> existingFriends = db.AccountFriend.Where(s => s.AccountId == existingAccount.AccountId).ToList();
+                    db.RemoveRange(existingFriends);
+
+                    // delete buddies
+                    List<AccountIgnored> existingIgnores = db.AccountIgnored.Where(ai => ai.AccountId == existingAccount.AccountId).ToList();
+                    db.RemoveRange(existingIgnores);
+
+                    // add fresh stats
                     List<AccountStat> newStats = (from ds in db.DimStats
                                                   select new AccountStat()
                                                   {
@@ -215,6 +232,7 @@ namespace Horizon.Database.Controllers
                                                   }).ToList();
                     db.AccountStat.AddRange(newStats);
 
+                    // add fresh custom stats
                     List<AccountCustomStat> newCustomStats = (from ds in db.DimCustomStats
                                                               select new AccountCustomStat()
                                                               {
