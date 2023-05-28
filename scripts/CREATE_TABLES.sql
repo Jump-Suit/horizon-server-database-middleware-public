@@ -1,5 +1,13 @@
 USE [Medius_Database]
 GO
+
+IF EXISTS (SELECT 1 FROM sys.schemas WHERE name = 'ACCOUNTS')
+BEGIN
+    RAISERROR ('Schemas already exist. Script terminated.', 16, 1)
+    RETURN
+END
+GO
+
 /****** Object:  Schema [ACCOUNTS]    Script Date: 8/9/2022 8:53:13 AM ******/
 CREATE SCHEMA [ACCOUNTS]
 GO
