@@ -553,21 +553,6 @@ namespace Horizon.Database.Entities
                     .HasConstraintName("FK_clan_custom_stat_dim_stats");
             });
 
-            modelBuilder.Entity<PostDebugInfo>(entity =>
-            {
-                entity.ToTable("client_debuginfo", "LOGS");
-
-                entity.Property(e => e.Id).HasColumnName("id");
-
-                entity.Property(e => e.Message).HasColumnName("message");
-
-                entity.Property(e => e.AppId).HasColumnName("app_id");
-
-                entity.Property(e => e.CreateDt)
-                    .HasColumnName("create_dt")
-                    .HasDefaultValueSql("(getutcdate())");
-            });
-
             modelBuilder.Entity<DimAnnouncements>(entity =>
             {
                 entity.ToTable("dim_announcements", "KEYS");

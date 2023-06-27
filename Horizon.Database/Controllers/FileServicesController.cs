@@ -13,6 +13,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualBasic;
+using Newtonsoft.Json.Linq;
 using FileAttributes = Horizon.Database.Entities.FileAttributes;
 
 namespace Horizon.Database.Controllers
@@ -62,6 +63,7 @@ namespace Horizon.Database.Controllers
                 FileAttributes newFileAttributes = new FileAttributes()
                 {
                     FileID = fileReq.FileID,
+                    FileName = fileReq.FileName,
                     Description = fileReq.fileAttributesDTO.Description,
                     LastChangedTimeStamp = fileReq.fileAttributesDTO.LastChangedTimeStamp,
                     LastChangedByUserID = fileReq.fileAttributesDTO.LastChangedByUserID,
@@ -182,168 +184,90 @@ namespace Horizon.Database.Controllers
         [HttpGet, Route("getFileListExt")]
         public async Task<List<FileDTO>> getFileListExt(int AppId, string FileNameBeginsWith, int OwnerByID, string metaKey)
         {
-            List<FileDTO> filesWithMetaDataReturn = new List<FileDTO>();
-            
-            if (OwnerByID < 0)
+            List<FileDTO> files = new List<FileDTO>();
+
+            List<Files> filesListReturned = new List<Files>();
+
+            if (OwnerByID == -1 || OwnerByID < 0)
             {
                 Console.WriteLine($"OwnerById < 0");
 
-                Files filesListReturned = null;
-                FileAttributes fileAttributes = null;
-                FileMetaData fileMetaData = null;
 
                 if (FileNameBeginsWith.Contains("*"))
                 {
                     Console.WriteLine($"1 FileNameBeginsWith: {FileNameBeginsWith}");
-                    filesListReturned = db.Files.Where(File => File.AppId == AppId)
-                        .FirstOrDefault();
-
-                    fileAttributes = db.FileAttributes.Where(x => x.AppId == AppId)
-                        .FirstOrDefault();
-
-                    fileMetaData = db.FileMetaDatas.Where(x => x.AppId == AppId)
-                        .FirstOrDefault();
+                    filesListReturned = db.Files.Where(File => File.AppId == AppId).ToList();
                 } else
                 {
                     Console.WriteLine($"2 FileNameBeginsWith: {FileNameBeginsWith}");
                     filesListReturned = db.Files.Where(File => File.AppId == AppId &&
-                        File.FileName.StartsWith(FileNameBeginsWith))
-                        .FirstOrDefault();
-
-                    fileAttributes = db.FileAttributes.Where(x => x.AppId == AppId
-                        && x.FileName.StartsWith(FileNameBeginsWith))
-                        .FirstOrDefault();
-
-                    fileMetaData = db.FileMetaDatas.Where(x => x.AppId == AppId
-                        && x.FileName.StartsWith(FileNameBeginsWith)
-                        && x.Key == metaKey)
-                        .FirstOrDefault();
+                        File.FileName.StartsWith(FileNameBeginsWith)).ToList();
                 }
 
                 if (filesListReturned == null) {
                     Console.WriteLine("No Files found to list");
                     return null;
-                } else if (fileAttributes == null) {
-                    Console.WriteLine("No Files attributes found to list");
-                    return null;
-                } else if (fileMetaData == null) {
-                    Console.WriteLine($"No File with key {metaKey} found to list");
-                    return null;
+                } 
+
+                foreach(var file in filesListReturned)
+                {
+
+                    FileDTO fileToList = new FileDTO()
+                    {
+                        AppId = AppId,
+                        FileID = file.FileID,
+                        ServerChecksum = file.ServerChecksum,
+                        FileName = file.FileName,
+                        FileSize = file.FileSize,
+                        CreationTimeStamp = file.CreationTimeStamp,
+                        OwnerID = file.OwnerID,
+                        GroupID = file.GroupID,
+                        OwnerPermissionRWX = file.OwnerPermissionRWX,
+                        GroupPermissionRWX = file.GroupPermissionRWX,
+                        GlobalPermissionRWX = file.GlobalPermissionRWX,
+                        ServerOperationID = file.ServerOperationID,
+                        CreateDt = file.CreateDt,
+                    };
+                    files.Add(fileToList);
                 }
 
-                FileDTO fileToList = new FileDTO()
-                {
-                    AppId = AppId,
-                    FileID = filesListReturned.FileID,
-                    ServerChecksum = filesListReturned.ServerChecksum,
-                    FileName = filesListReturned.FileName,
-                    FileSize = filesListReturned.FileSize,
-                    CreationTimeStamp = filesListReturned.CreationTimeStamp,
-                    OwnerID = filesListReturned.OwnerID,
-                    GroupID = filesListReturned.GroupID,
-                    OwnerPermissionRWX = filesListReturned.OwnerPermissionRWX,
-                    GroupPermissionRWX = filesListReturned.GroupPermissionRWX,
-                    GlobalPermissionRWX = filesListReturned.GlobalPermissionRWX,
-                    ServerOperationID = filesListReturned.ServerOperationID,
-                    CreateDt = filesListReturned.CreateDt,
-                    fileAttributesDTO = new FileAttributesDTO()
-                    {
-                        AppId = AppId,
-                        FileID = filesListReturned.FileID,
-                        FileName = filesListReturned.FileName,
-                        Description = fileAttributes.Description,
-                        LastChangedTimeStamp = fileAttributes.LastChangedTimeStamp,
-                        LastChangedByUserID = fileAttributes.LastChangedByUserID,
-                        NumberAccesses = fileAttributes.NumberAccesses,
-                        StreamableFlag = fileAttributes.StreamableFlag,
-                        StreamingDataRate = fileAttributes.StreamingDataRate,
-                        CreateDt = fileAttributes.CreateDt,
-                    },
-                    fileMetaDataDTO = new FileMetaDataDTO()
-                    {
-                        AppId = AppId,
-                        FileID = fileMetaData.FileID,
-                        FileName = fileMetaData.FileName,
-                        Key = fileMetaData.Key,
-                        Value = fileMetaData.Value,
-                        CreateDt = fileMetaData.CreateDt,
-                    }
-                };
-                filesWithMetaDataReturn.Add(fileToList);
-                return filesWithMetaDataReturn;
+                return files;
             }
             else 
             {
-                var filesListReturnedByOwnerId = db.Files.Where(File => File.AppId == AppId
+                filesListReturned = db.Files.Where(File => File.AppId == AppId
                             && File.FileName.StartsWith(FileNameBeginsWith)
-                            && File.OwnerID == OwnerByID).FirstOrDefault();
+                            && File.OwnerID == OwnerByID).ToList();
 
-                var fileAttributes = db.FileAttributes.Where(x => x.AppId == AppId
-                    && x.FileName.StartsWith(FileNameBeginsWith))
-                    .FirstOrDefault();
-
-                var fileMetaData = db.FileMetaDatas.Where(x => x.AppId == AppId
-                    && x.FileName.StartsWith(FileNameBeginsWith)
-                    && x.Key == metaKey)
-                    .FirstOrDefault();
-
-                if (filesListReturnedByOwnerId == null)
+                if (filesListReturned == null)
                 {
                     Console.WriteLine("No Files found to list");
                     return null;
                 }
-                else if (fileAttributes == null)
-                {
-                    Console.WriteLine("No Files attributes found to list");
-                    return null;
-                }
-                else if (fileMetaData == null)
-                {
-                    Console.WriteLine($"No File with key {metaKey} found to list");
-                    return null;
-                }
 
-                FileDTO fileToList = new FileDTO()
+                foreach (var file in filesListReturned)
                 {
-                    AppId = AppId,
-                    FileID = filesListReturnedByOwnerId.FileID,
-                    ServerChecksum = filesListReturnedByOwnerId.ServerChecksum,
-                    FileName = filesListReturnedByOwnerId.FileName,
-                    FileSize = filesListReturnedByOwnerId.FileSize,
-                    CreationTimeStamp = filesListReturnedByOwnerId.CreationTimeStamp,
-                    OwnerID = filesListReturnedByOwnerId.OwnerID,
-                    GroupID = filesListReturnedByOwnerId.GroupID,
-                    OwnerPermissionRWX = filesListReturnedByOwnerId.OwnerPermissionRWX,
-                    GroupPermissionRWX = filesListReturnedByOwnerId.GroupPermissionRWX,
-                    GlobalPermissionRWX = filesListReturnedByOwnerId.GlobalPermissionRWX,
-                    ServerOperationID = filesListReturnedByOwnerId.ServerOperationID,
-                    fileAttributesDTO = new FileAttributesDTO()
+
+                    FileDTO fileToList = new FileDTO()
                     {
                         AppId = AppId,
-                        FileID = fileAttributes.FileID,
-                        FileName = filesListReturnedByOwnerId.FileName,
-                        Description = fileAttributes.Description,
-                        LastChangedTimeStamp = fileAttributes.LastChangedTimeStamp,
-                        LastChangedByUserID = fileAttributes.LastChangedByUserID,
-                        NumberAccesses = fileAttributes.NumberAccesses,
-                        StreamableFlag = fileAttributes.StreamableFlag,
-                        StreamingDataRate = fileAttributes.StreamingDataRate,
-                        CreateDt = fileAttributes.CreateDt,
-                    },
-                    fileMetaDataDTO = new FileMetaDataDTO()
-                    {
-                        AppId = AppId,
-                        FileID = fileMetaData.FileID,
-                        FileName = fileMetaData.FileName,
-                        Key = fileMetaData.Key,
-                        Value = fileMetaData.Value,
-                        CreateDt = fileMetaData.CreateDt,
-                    }
-                };
+                        FileID = file.FileID,
+                        ServerChecksum = file.ServerChecksum,
+                        FileName = file.FileName,
+                        FileSize = file.FileSize,
+                        CreationTimeStamp = file.CreationTimeStamp,
+                        OwnerID = file.OwnerID,
+                        GroupID = file.GroupID,
+                        OwnerPermissionRWX = file.OwnerPermissionRWX,
+                        GroupPermissionRWX = file.GroupPermissionRWX,
+                        GlobalPermissionRWX = file.GlobalPermissionRWX,
+                        ServerOperationID = file.ServerOperationID,
+                        CreateDt = file.CreateDt,
+                    };
+                    files.Add(fileToList);
+                }
 
-                filesWithMetaDataReturn.Add(fileToList);
-
-                return filesWithMetaDataReturn;
+                return files;
             }
         }
         #endregion
@@ -683,25 +607,25 @@ namespace Horizon.Database.Controllers
 
         #region getFileMetaData
         [Authorize("database")]
-        [HttpPost, Route("getFileMetaData")]
-        public async Task<dynamic> getFileMetaData([FromBody] FileDTO fileReq)
+        [HttpGet, Route("getFileMetaData")]
+        public async Task<dynamic> getFileMetaData(int appid, string fileName, string Key)
         {
-
-            var fileMetaDataResults = db.FileMetaDatas.Where(x => x.AppId == fileReq.AppId
-                && x.FileName == fileReq.FileName
-                && x.Key == fileReq.fileMetaDataDTO.Key).ToList();
-
-            if (fileMetaDataResults == null)
+            if (Key == null)
             {
-                Console.WriteLine("No Files found return MetaData for");
-                return null;
-            }
-            else
-            {
-                Console.WriteLine("FileMetaData Returned! ");
 
-                return fileMetaDataResults;
+                var newFileMetaData = db.FileMetaDatas.Where(x => x.AppId == appid
+                    && x.FileName == fileName).ToList();
+
+                return newFileMetaData;
+            } else
+            {
+                var fileMetaDataResult = db.FileMetaDatas.Where(x => x.AppId == appid
+                    && x.FileName == fileName
+                    && x.Key == Key).ToList();
+
+                return fileMetaDataResult;
             }
+
         }
         #endregion
 
