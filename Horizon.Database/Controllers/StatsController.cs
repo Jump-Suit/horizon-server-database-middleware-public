@@ -66,12 +66,17 @@ namespace Horizon.Database.Controllers
             return Ok("Stats Validated");
         }
 
+
         [Authorize("database")]
         [HttpGet, Route("getStats")]
         public async Task<dynamic> getStats(int AccountId)
         {
             DateTime modifiedDt = DateTime.UtcNow;
             List<AccountStat> playerStats = db.AccountStat.Where(s => s.AccountId == AccountId).OrderBy(s => s.StatId).Select(s => s).ToList();
+
+            int badStats = playerStats.Where(s => s.StatValue < 0).Count();
+            if (badStats > 0)
+                return BadRequest("Found a negative stat in array. Can't have those!");
 
             return new StatPostDTO()
             {
@@ -97,6 +102,7 @@ namespace Horizon.Database.Controllers
                 stats = clanStats.Select(x => x.StatValue).ToList()
             };
         }
+
 
         [Authorize]
         [HttpGet, Route("getPlayerLeaderboardIndex")]
@@ -336,20 +342,44 @@ namespace Horizon.Database.Controllers
             DateTime modifiedDt = DateTime.UtcNow;
             List<AccountStat> playerStats = db.AccountStat.Where(s => s.AccountId == statData.AccountId).OrderBy(s => s.StatId).Select(s => s).ToList();
 
-            foreach (AccountStat pStat in playerStats)
-            {
-                
-                int newValue = statData.stats[pStat.StatId - 1];
-                pStat.ModifiedDt = modifiedDt;
-                pStat.StatValue = newValue;
+            int badStats = playerStats.Where(s => s.StatValue < 0).Count();
+            if (badStats > 0)
+                return BadRequest("Found a negative stat in array. Can't have those!");
 
-                db.AccountStat.Attach(pStat);
-                db.Entry(pStat).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
+
+            // populate stats if not already exists
+            for (int i = 0; i < statData.stats.Count; ++i)
+            {
+                AccountStat existingStat = playerStats.Where(x => x.StatId == (i + 1)).FirstOrDefault();
+                if (existingStat == null)
+                {
+                    AccountStat newStat = new AccountStat()
+                    {
+                        StatId = i + 1,
+                        AccountId = statData.AccountId,
+                        StatValue = statData.stats[i],
+                    };
+
+                    db.AccountStat.Add(newStat);
+                }
+                else
+                {
+                    foreach (AccountStat pStat in playerStats)
+                    {
+                        int newValue = statData.stats[pStat.StatId - 1];
+                        pStat.ModifiedDt = modifiedDt;
+                        pStat.StatValue = newValue;
+
+                        //existingStat.StatValue = statData.stats[i];
+
+                        db.AccountStat.Attach(pStat);
+                        db.Entry(pStat).State = EntityState.Modified;
+                    }
+                }
             }
 
             db.SaveChanges();
             return Ok();
-
         }
 
         [Authorize("database")]
@@ -400,19 +430,12 @@ namespace Horizon.Database.Controllers
             foreach (ClanStat cStat in clanStats)
             {
 
-                int newValue;
-                if (statData.Delta){
-                    newValue = cStat.StatValue + statData.stats[cStat.StatId - 1];
-                }
-                else{
-                    newValue = statData.stats[cStat.StatId - 1];
-                }   
-                
+                int newValue = statData.stats[cStat.StatId - 1];
                 cStat.ModifiedDt = modifiedDt;
                 cStat.StatValue = newValue;
 
                 db.ClanStat.Attach(cStat);
-                db.Entry(cStat).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
+                db.Entry(cStat).State = EntityState.Modified;
             }
 
             db.SaveChanges();

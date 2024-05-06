@@ -23,6 +23,59 @@ namespace Horizon.Database.Controllers
         [HttpPost, Route("addBuddyInvitation")]
         public async Task<dynamic> addBuddyInvitation([FromBody] AccountRelationInviteDTO buddyReq)
         {
+            /*
+            AccountFriendInvitations friendPending = db.AccountFriendInvitations.Where(af => af.AccountId == accountFriendInvitation.AccountId
+                && af.FriendAccountId == accountFriendInvitation.BuddyAccountId)
+                .FirstOrDefault();
+            
+            if (friendPending != null)
+            {
+                return StatusCode(403, "Buddy Invitation already exists!");
+            }
+            */
+
+            //db.Entry(newFriendInvite).State = EntityState.Added;
+
+
+            /*
+            DateTime now = DateTime.UtcNow;
+            AccountFriendInvitations existingAccountFriendInvitation = db.AccountFriendInvitations.Where(a => a.AccountId == accountFriendInvitation.AccountId
+                && a.AppId == accountFriendInvitation.AppId
+                && a.FriendAccountId == accountFriendInvitation.FriendAccountId)
+                .FirstOrDefault();
+            if (existingAccountFriendInvitation == null)
+            {
+                AccountFriendInvitations newFriendInvite = new AccountFriendInvitations()
+                {
+                    AccountId = accountFriendInvitation.AccountId,
+                    FriendAccountId = accountFriendInvitation.FriendAccountId,
+                    AppId = accountFriendInvitation.AppId,
+                    CreateDt = DateTime.UtcNow
+                };
+
+                db.AccountFriendInvitations.Add(newFriendInvite);
+                db.SaveChanges();
+
+                return Ok("Buddy Invitation Added!");
+            } else
+            {
+                return StatusCode(403, "Buddy Invitation already exists!");
+            }
+            */
+
+            /*
+            DateTime now = DateTime.UtcNow;
+            AccountFriendInvitations buddyInvitation = new AccountFriendInvitations()
+            {
+                AccountId = accountFriendInvitation.AccountId,
+                FriendAccountId = accountFriendInvitation.FriendAccountId,
+                AppId = accountFriendInvitation.AppId,
+                CreateDt = now
+            };
+            db.AccountFriendInvitations.Add(buddyInvitation);
+            db.SaveChanges();
+            return Ok("Buddy Invitation Added");
+            */
 
 
             AccountFriendInvitations existingFriendInvite = db.AccountFriendInvitations.Where(af => af.AccountId == buddyReq.AccountId && af.FriendAccountId == buddyReq.BuddyAccountId && af.AppId == buddyReq.AppId).FirstOrDefault();

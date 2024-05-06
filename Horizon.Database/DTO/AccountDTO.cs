@@ -21,7 +21,7 @@ namespace Horizon.Database.DTO
         public int? AppId { get; set; }
         public int? ClanId { get; set; }
         public string Metadata { get; set; }
-        public bool ResetPasswordOnNextLogin { get; set; } = false;
+        public bool? ResetPasswordOnNextLogin { get; set; }
     }
 
     public class AccountRequestDTO
@@ -32,7 +32,6 @@ namespace Horizon.Database.DTO
         public string MediusStats { get; set; }
         public int AppId { get; set; }
         public bool PasswordPreHashed { get; set; } = true;
-        public bool ResetPasswordOnNextLogin { get; set; } = false;
     }
 
     public class AccountRelationInviteDTO

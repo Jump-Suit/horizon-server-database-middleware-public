@@ -32,7 +32,6 @@ namespace Horizon.Database.Entities
         public virtual DbSet<ClanStat> ClanStat { get; set; }
         public virtual DbSet<ClanTeamChallenge> ClanTeamChallenge { get; set; }
         public virtual DbSet<ClanCustomStat> ClanCustomStat { get; set; }
-        public virtual DbSet<PostDebugInfo> DebugInfo { get; set; }
         public virtual DbSet<DimAnnouncements> DimAnnouncements { get; set; }
         public virtual DbSet<DimAppGroups> DimAppGroups { get; set; }
         public virtual DbSet<DimAppIds> DimAppIds { get; set; }
@@ -48,6 +47,8 @@ namespace Horizon.Database.Entities
         public virtual DbSet<GameHistory> GameHistory { get; set; }
         public virtual DbSet<Channels> Channels { get; set; }
         public virtual DbSet<Locations> Locations { get; set; }
+        public virtual DbSet<Universe> Universes { get; set; }
+        public virtual DbSet<UniverseNews> UniverseNews { get; set; }
         public virtual DbSet<NpId> NpIds { get; set; }
         public virtual DbSet<Roles> Roles { get; set; }
         public virtual DbSet<ServerFlags> ServerFlags { get; set; }
@@ -57,6 +58,64 @@ namespace Horizon.Database.Entities
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<UniverseNews>(entity =>
+            {
+                entity.ToTable("universe_news", "UNIVERSES");
+
+                entity.Property(e => e.AppId).HasColumnName("app_id");
+
+
+                entity.Property(e => e.Id).HasColumnName("id");
+
+                entity.Property(e => e.News).HasColumnName("news");
+
+                entity.Property(e => e.CreateDt)
+                    .HasColumnName("create_dt")
+                    .HasDefaultValueSql("(getutcdate())");
+
+                entity.Property(e => e.ModifiedDt).HasColumnName("modified_dt");
+            });
+
+            modelBuilder.Entity<Universe>(entity =>
+            {
+                entity.ToTable("universes", "UNIVERSES");
+
+                entity.Property(e => e.AppId).HasColumnName("app_id");
+
+                entity.Property(e => e.UniverseID).HasColumnName("universe_id");
+
+                entity.Property(e => e.UniverseName).HasColumnName("universe_name")
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.UniverseDescription).HasColumnName("universe_description")
+                    .HasMaxLength(256);
+
+                entity.Property(e => e.DNS).HasColumnName("dns")
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.Port).HasColumnName("port");
+
+                entity.Property(e => e.Status).HasColumnName("status");
+                entity.Property(e => e.UserCount).HasColumnName("user_count");
+                entity.Property(e => e.MaxUsers).HasColumnName("max_users");
+
+                entity.Property(e => e.UniverseBilling).HasColumnName("universe_billing")
+                    .HasMaxLength(8);
+                entity.Property(e => e.BillingSystemName).HasColumnName("billing_system_name")
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.ExtendedInfo).HasColumnName("extended_info")
+                    .HasMaxLength(256);
+                entity.Property(e => e.SvoURL).HasColumnName("svo_url")
+                .HasMaxLength(128);
+
+                entity.Property(e => e.CreateDt)
+                    .HasColumnName("create_dt")
+                    .HasDefaultValueSql("(getutcdate())");
+
+                entity.Property(e => e.ModifiedDt).HasColumnName("modified_dt");
+            });
+
             modelBuilder.Entity<Account>(entity =>
             {
                 entity.ToTable("account", "ACCOUNTS");
@@ -99,8 +158,8 @@ namespace Horizon.Database.Entities
                     .HasMaxLength(350);
 
                 entity.Property(e => e.ResetPasswordOnNextLogin)
-                    .IsRequired()
-                    .HasColumnName("reset_password_on_next_login");
+                    .HasColumnName("reset_pw_on_next_login")
+                    .HasDefaultValueSql("((0))");
 
                 entity.Property(e => e.Metadata).HasColumnName("metadata");
 
@@ -1007,7 +1066,6 @@ namespace Horizon.Database.Entities
                 entity.Property(e => e.AppId).HasColumnName("app_id");
 
                 entity.Property(e => e.data)
-                    .IsRequired()
                     .HasColumnName("data")
                     .HasMaxLength(16);
                 entity.Property(e => e.term).HasColumnName("term");

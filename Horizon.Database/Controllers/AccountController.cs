@@ -270,10 +270,60 @@ namespace Horizon.Database.Controllers
         [HttpPost, Route("postNpId")]
         public async Task<dynamic> createNpIdAccount([FromBody] NpIdDTO request)
         {
+            
+            try
+            {
+                DateTime now = DateTime.UtcNow;
+                NpId existingNpIdAccount = db.NpIds.Where(a => a.data == request.data && a.AppId == request.AppId).FirstOrDefault();
+                if (existingNpIdAccount == null)
+                {
+
+                    NpId acc = new NpId()
+                    {
+                        AppId = request.AppId,
+                        data = request.data,
+                        term = request.term,
+                        dummy = request.dummy,
+
+                        opt = request.opt,
+                        reserved = request.reserved,
+                        CreateDt = now,
+                    };
+
+                    db.NpIds.Add(acc);
+                    db.SaveChanges();
+
+                    return acc;
+                }
+                else
+                {
+                    existingNpIdAccount.AppId = request.AppId;
+                    existingNpIdAccount.data = request.data;
+                    existingNpIdAccount.term = request.term;
+                    existingNpIdAccount.dummy = request.dummy;
+
+                    existingNpIdAccount.opt = request.opt;
+                    existingNpIdAccount.reserved = request.reserved;
+                    existingNpIdAccount.ModifiedDt = now;
+
+                    db.NpIds.Attach(existingNpIdAccount);
+                    db.Entry(existingNpIdAccount).State = EntityState.Modified;
+
+                    db.SaveChanges();
+
+                    return existingNpIdAccount;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Failed at: " + ex.ToString());
+                return StatusCode(200, $"Failed to post NpId");
+            }
+            
              
+            /*
             DateTime now = DateTime.UtcNow;
-            NpId existingNpIdAccount = db.NpIds.Where(a => a.data == request.data
-                && a.AppId == request.AppId).FirstOrDefault();
+            NpId existingNpIdAccount = db.NpIds.Where(a => a.AppId == request.AppId).FirstOrDefault();
             if (existingNpIdAccount == null)
             {
                 NpId acc = new NpId()
@@ -310,6 +360,7 @@ namespace Horizon.Database.Controllers
 
                 return existingNpIdAccount;
             }
+            */
         }
 
         [Authorize("database")]
